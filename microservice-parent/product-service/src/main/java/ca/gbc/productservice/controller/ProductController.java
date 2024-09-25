@@ -18,7 +18,7 @@ public class ProductController {
 
     private final ProductService productService;
 
-    @PatchMapping
+    @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public void createProduct(@RequestBody ProductRequest productRequest) {
         productService.createProduct(productRequest);
@@ -32,6 +32,7 @@ public class ProductController {
 
     //https://localhost:8083/api/product/jhshgfysrhb
     //@ResponseStatus(HttpStatus.NO_CONTENT)
+    @PutMapping("/{productId}")
     public ResponseEntity<?> updateProduct(@PathVariable("productId") String productId
             , @RequestBody ProductRequest productRequest) {
         String updatedProductId=productService.updateProduct(productId, productRequest);
@@ -41,11 +42,11 @@ public class ProductController {
         return new ResponseEntity<>(headers, HttpStatus.NO_CONTENT);
     }
 
-    @DeleteMapping
+    @DeleteMapping("/{productId}")
     //@ResponseStatus(HttpStatus.NO_CONTENT)
     public ResponseEntity<?> deleteProduct(@PathVariable("productId") String productId) {
         productService.deleteProduct(productId);
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        return new ResponseEntity<>(    HttpStatus.NO_CONTENT);
 
     }
 
