@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -21,8 +22,8 @@ public class EventServiceImpl implements EventService {
     private final EventRepository eventRepository;
     private final RestTemplate restTemplate;
 
-    private static final String USER_SERVICE_URL = "http://localhost:8088/api/users/{Id}/role";
-    private static final String ROOM_SERVICE_URL = "http://localhost:8086/api/rooms/{roomId}/capacity";
+    private static final String USER_SERVICE_URL = "http://localhost:8087/api/users/{Id}/role";
+    private static final String ROOM_SERVICE_URL = "http://localhost:8086/api/rooms/{Id}/capacity";
     private static final String BOOKING_SERVICE_URL = "http://localhost:8088/api/bookings";
 
 

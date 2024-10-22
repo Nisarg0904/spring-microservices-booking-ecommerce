@@ -87,7 +87,10 @@ public class BookingServiceImpl implements BookingService {
                 LocalDateTime end = LocalDateTime.parse(endTime);
                 List<Booking> conflictingBookings = bookingRepository.findByRoomIdAndStartTimeBetweenOrEndTimeBetween(
                         roomId, start, end, start, end);
-                conflictingBookings.add(bookingRepository.findByRoomIdAndStartTimeAndEndTime(roomId, start, end));
+                Booking booking= bookingRepository.findByRoomIdAndStartTimeAndEndTime(roomId, start, end);
+                if(booking!=null) {
+                    conflictingBookings.add(booking);
+                }
                 return conflictingBookings.isEmpty();
             }
         } catch (HttpStatusCodeException e) {
