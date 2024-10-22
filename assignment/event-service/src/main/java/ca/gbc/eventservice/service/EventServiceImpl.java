@@ -13,7 +13,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -122,14 +121,12 @@ public class EventServiceImpl implements EventService {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new IllegalArgumentException("Event not found with id: " + eventId));
 
-        // Delete the associated booking
         deleteBooking(event.getBookingId());
 
-        // Finally, delete the event
         eventRepository.deleteById(eventId);
     }
     private void deleteBooking(String bookingId) {
-        String url = BOOKING_SERVICE_URL + "/" + bookingId; // Assuming your booking deletion endpoint is like /api/bookings/{id}
+        String url = BOOKING_SERVICE_URL + "/" + bookingId;
         restTemplate.delete(url);
     }
 
