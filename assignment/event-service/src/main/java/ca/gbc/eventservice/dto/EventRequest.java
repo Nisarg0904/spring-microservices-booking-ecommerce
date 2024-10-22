@@ -10,5 +10,6 @@ public record EventRequest(String id,
                            String roomId,
                            LocalDateTime startTime,
                            LocalDateTime endTime,
-                           String Status) {
+                           String Status,
+                           String bookingId) {
 }

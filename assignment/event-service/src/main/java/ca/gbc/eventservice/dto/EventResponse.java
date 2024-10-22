@@ -10,5 +10,6 @@ public record EventResponse(String id,
                             String roomId,
                             LocalDateTime startTime,
                             LocalDateTime endTime,
-                            String Status) {
+                            String Status,
+                            String bookingId) {
 }

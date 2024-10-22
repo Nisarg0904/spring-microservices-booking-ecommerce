@@ -1,11 +1,14 @@
 package ca.gbc.eventservice.service;
 
 import ca.gbc.eventservice.dto.BookingRequest;
+import ca.gbc.eventservice.dto.BookingResponse;
 import ca.gbc.eventservice.dto.EventRequest;
 import ca.gbc.eventservice.dto.EventResponse;
 import ca.gbc.eventservice.model.Event;
 import ca.gbc.eventservice.repository.EventRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -25,11 +28,14 @@ public class EventServiceImpl implements EventService {
     private static final String USER_SERVICE_URL = "http://localhost:8087/api/users/{Id}/role";
     private static final String ROOM_SERVICE_URL = "http://localhost:8086/api/rooms/{Id}/capacity";
     private static final String BOOKING_SERVICE_URL = "http://localhost:8088/api/bookings";
+    private static final String BOOKING_SERVICE_URL1 = "http://localhost:8088/api/bookings";
+
 
 
     @Override
     public EventResponse createEvent(EventRequest eventRequest) {
         String organizerRole = getOrganizerRole(eventRequest.organizerId());
+        String bookingId;
 
         if ("student".equalsIgnoreCase(organizerRole) && eventRequest.expectedAttendees() > 25) {
             throw new IllegalArgumentException("Students cannot organize events with more than 25 attendees.");
@@ -38,7 +44,7 @@ public class EventServiceImpl implements EventService {
             throw new IllegalArgumentException("Room capacity exceeded.");
         }
         try {
-            makeBookingForEvent(eventRequest.organizerId(), eventRequest.roomId(), eventRequest.startTime(), eventRequest.endTime());
+            bookingId =makeBookingForEvent(eventRequest.organizerId(), eventRequest.roomId(), eventRequest.startTime(), eventRequest.endTime());
         } catch (Exception e) {
             throw new IllegalArgumentException("Booking failed: " + e.getMessage());
         }
@@ -53,6 +59,7 @@ public class EventServiceImpl implements EventService {
                 .endTime(eventRequest.endTime())
                 .roomId(eventRequest.roomId())
                 .Status("PENDING")
+                .bookingId(bookingId)
                 .build();
 
         // Save the event in the database
@@ -68,7 +75,8 @@ public class EventServiceImpl implements EventService {
                 savedEvent.getRoomId(),
                 savedEvent.getStartTime(),
                 savedEvent.getEndTime(),
-                savedEvent.getStatus()
+                savedEvent.getStatus(),
+                savedEvent.getBookingId()
         );
     }
 
@@ -85,7 +93,8 @@ public class EventServiceImpl implements EventService {
                         event.getRoomId(),
                         event.getStartTime(),
                         event.getEndTime(),
-                        event.getStatus()))
+                        event.getStatus(),
+                        event.getBookingId()))
                 .collect(Collectors.toList());
     }
 
@@ -103,14 +112,25 @@ public class EventServiceImpl implements EventService {
                 event.getRoomId(),
                 event.getStartTime(),
                 event.getEndTime(),
-                event.getStatus()
+                event.getStatus(),
+                event.getBookingId()
         );
     }
 
     @Override
     public void deleteEventById(String eventId) {
-        eventRepository.deleteById(eventId);
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new IllegalArgumentException("Event not found with id: " + eventId));
 
+        // Delete the associated booking
+        deleteBooking(event.getBookingId());
+
+        // Finally, delete the event
+        eventRepository.deleteById(eventId);
+    }
+    private void deleteBooking(String bookingId) {
+        String url = BOOKING_SERVICE_URL + "/" + bookingId; // Assuming your booking deletion endpoint is like /api/bookings/{id}
+        restTemplate.delete(url);
     }
 
     private String getOrganizerRole(String organizerId) {
@@ -123,8 +143,15 @@ public class EventServiceImpl implements EventService {
         return restTemplate.getForObject(url, Integer.class);
     }
 
-    private void makeBookingForEvent(String userId, String roomId, LocalDateTime startTime, LocalDateTime endTime) {
+    private String makeBookingForEvent(String userId, String roomId, LocalDateTime startTime, LocalDateTime endTime) {
         BookingRequest bookingRequest = new BookingRequest(userId, roomId, startTime, endTime, "Event Booking");
-        restTemplate.postForObject(BOOKING_SERVICE_URL, bookingRequest, Void.class);
+        ResponseEntity<BookingResponse> response = restTemplate.postForEntity(BOOKING_SERVICE_URL, bookingRequest, BookingResponse.class);
+
+        if (response.getStatusCode() == HttpStatus.CREATED && response.getBody() != null) {
+            return response.getBody().id();
+        } else {
+            throw new IllegalStateException("Failed to create booking: " + response.getStatusCode());
+        }
     }
+
 }
