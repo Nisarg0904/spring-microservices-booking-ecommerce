@@ -16,7 +16,7 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
-public class UserController {
+public class    UserController {
 
     private final UserService userService;
 
@@ -72,6 +72,11 @@ public class UserController {
     public ResponseEntity<List<UserResponse>> getUsersByUserType(@PathVariable String userType) {
         List<UserResponse> users = userService.getUsersByUserType(userType);
         return ResponseEntity.ok(users);
+    }
+    @GetMapping("/{Id}/role")
+    public ResponseEntity<String> getUserRole(@PathVariable("Id") Long userId) {
+        String userType = userService.getUserTypeById(userId);
+        return ResponseEntity.ok(userType);
     }
 }
 

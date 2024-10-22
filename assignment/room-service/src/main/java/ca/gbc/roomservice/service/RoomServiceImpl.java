@@ -123,6 +123,14 @@ public class RoomServiceImpl implements RoomService {
         return changeRoomAvailability(id, true);
     }
 
+    @Override
+    public int getRoomCapacity(String id) {
+        Room room= roomRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Room not found with id: " + id));
+        return room.getCapacity();
+
+    }
+
     private RoomResponse changeRoomAvailability(String id, boolean available) {
         Optional<Room> roomOpt = roomRepository.findById(id);
 

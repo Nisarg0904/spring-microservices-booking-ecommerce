@@ -64,7 +64,14 @@ public class UserServiceImpl implements UserService {
             return convertToUserResponse(updatedUser);
         });
     }
+    @Override
+    public String getUserTypeById(Long Id) {
+        // Find user by ID and return their userType (e.g., student, faculty, staff)
+        User user = userRepository.findById(Id)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + Id));
 
+        return user.getUserType(); // Assuming your User model has a userType field
+    }
     @Override
     public void deleteUser(Long id) {
         userRepository.deleteById(id);

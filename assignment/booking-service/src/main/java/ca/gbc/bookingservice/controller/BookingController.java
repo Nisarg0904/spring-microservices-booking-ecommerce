@@ -43,14 +43,14 @@ public class BookingController {
         return ResponseEntity.noContent().build();
     }
 
-    // Check room availability
-//    @GetMapping("/check-availability")
-//    public ResponseEntity<Boolean> checkRoomAvailability(
-//            @RequestParam("roomId") String roomId,
-//            @RequestParam("startTime") String startTime,
-//            @RequestParam("endTime") String endTime) {
-//
-//        boolean isAvailable = bookingService.isRoomAvailable(roomId, startTime, endTime);
-//        return ResponseEntity.ok(isAvailable);
-//    }
+//     Check room availability
+    @GetMapping("/check-availability")
+    public ResponseEntity<Boolean> checkRoomAvailability(
+            @RequestParam("roomId") String roomId,
+            @RequestParam("startTime") String startTime,
+            @RequestParam("endTime") String endTime) {
+
+        boolean isAvailable = bookingService.isRoomAvailable(roomId, startTime, endTime);
+        return ResponseEntity.ok(isAvailable);
+    }
 }

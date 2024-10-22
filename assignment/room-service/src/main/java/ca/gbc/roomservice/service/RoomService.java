@@ -15,4 +15,5 @@ public interface RoomService {
     boolean checkRoomAvailability(String id);
     RoomResponse markRoomAsUnavailable(String id);
     RoomResponse markRoomAsAvailable(String id);
+    int getRoomCapacity(String id);
 }
