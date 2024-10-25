@@ -58,4 +58,10 @@ public class EventController {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
     }
+
+    @PatchMapping("/{eventId}/status")
+    public ResponseEntity<Void> updateEventStatus(@PathVariable String eventId, @RequestBody EventRequest eventRequest) {
+        eventService.updateEventStatus(eventId, eventRequest.Status());
+        return ResponseEntity.noContent().build();
+    }
 }

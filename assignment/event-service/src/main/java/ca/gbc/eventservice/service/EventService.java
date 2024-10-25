@@ -14,4 +14,6 @@ public interface EventService {
     EventResponse getEventById(String eventId);
 
     void deleteEventById(String eventId);
+    void updateEventStatus(String eventId, String status);
+
 }

@@ -27,7 +27,6 @@ public class EventServiceImpl implements EventService {
     private static final String USER_SERVICE_URL = "http://localhost:8087/api/users/{Id}/role";
     private static final String ROOM_SERVICE_URL = "http://localhost:8086/api/rooms/{Id}/capacity";
     private static final String BOOKING_SERVICE_URL = "http://localhost:8088/api/bookings";
-    private static final String BOOKING_SERVICE_URL1 = "http://localhost:8088/api/bookings";
 
 
 
@@ -128,6 +127,13 @@ public class EventServiceImpl implements EventService {
     private void deleteBooking(String bookingId) {
         String url = BOOKING_SERVICE_URL + "/" + bookingId;
         restTemplate.delete(url);
+    }
+    @Override
+    public void updateEventStatus(String eventId, String status) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new IllegalArgumentException("Event not found with id: " + eventId));
+        event.setStatus(status);
+        eventRepository.save(event);
     }
 
     private String getOrganizerRole(String organizerId) {
