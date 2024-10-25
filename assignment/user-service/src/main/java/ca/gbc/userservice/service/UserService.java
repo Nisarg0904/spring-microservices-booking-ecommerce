@@ -20,4 +20,6 @@ public interface UserService {
 
     List<UserResponse> getUsersByRole(String role);
     List<UserResponse> getUsersByUserType(String userType);
+    String getUserTypeById(Long Id);
+
 }

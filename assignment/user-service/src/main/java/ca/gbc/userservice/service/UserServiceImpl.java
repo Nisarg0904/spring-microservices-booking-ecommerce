@@ -22,7 +22,7 @@ public class UserServiceImpl implements UserService {
 
 
     private UserResponse convertToUserResponse(User user) {
-        return new UserResponse(user.getId(),user.getName(),user.getEmail(),user.getPassword(),user.getRole());
+        return new UserResponse(user.getId(),user.getName(),user.getEmail(),user.getRole(),user.getUserType());
     }
     private User convertToUser(UserRequest userRequest) {
         return User.builder()
@@ -64,7 +64,14 @@ public class UserServiceImpl implements UserService {
             return convertToUserResponse(updatedUser);
         });
     }
+    @Override
+    public String getUserTypeById(Long Id) {
+        // Find user by ID and return their userType (e.g., student, faculty, staff)
+        User user = userRepository.findById(Id)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + Id));
 
+        return user.getUserType();
+    }
     @Override
     public void deleteUser(Long id) {
         userRepository.deleteById(id);
