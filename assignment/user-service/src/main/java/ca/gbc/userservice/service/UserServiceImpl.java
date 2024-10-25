@@ -70,7 +70,7 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(Id)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + Id));
 
-        return user.getRole();
+        return user.getUserType();
     }
     @Override
     public void deleteUser(Long id) {

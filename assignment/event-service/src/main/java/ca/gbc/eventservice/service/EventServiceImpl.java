@@ -24,83 +24,11 @@ public class EventServiceImpl implements EventService {
     private final EventRepository eventRepository;
     private final RestTemplate restTemplate;
 
-    private static final String USER_SERVICE_URL = "http://localhost:8087/api/users/{Id}/role";
+    private static final String USER_SERVICE_URL = "http://localhost:8087/api/users/{Id}/type";
     private static final String ROOM_SERVICE_URL = "http://localhost:8086/api/rooms/{Id}/capacity";
     private static final String BOOKING_SERVICE_URL = "http://localhost:8088/api/bookings";
 
-
-
-    @Override
-    public EventResponse createEvent(EventRequest eventRequest) {
-        String organizerRole = getOrganizerRole(eventRequest.organizerId());
-        String bookingId;
-
-        if ("student".equalsIgnoreCase(organizerRole) && eventRequest.expectedAttendees() > 25) {
-            throw new IllegalArgumentException("Students cannot organize events with more than 25 attendees.");
-        }
-        if (eventRequest.expectedAttendees() > getRoomCapacity(eventRequest.roomId())) {
-            throw new IllegalArgumentException("Room capacity exceeded.");
-        }
-        try {
-            bookingId =makeBookingForEvent(eventRequest.organizerId(), eventRequest.roomId(), eventRequest.startTime(), eventRequest.endTime());
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Booking failed: " + e.getMessage());
-        }
-
-
-        Event event = Event.builder()
-                .eventName(eventRequest.eventName())
-                .organizerId(eventRequest.organizerId())
-                .eventType(eventRequest.eventType())
-                .expectedAttendees(eventRequest.expectedAttendees())
-                .startTime(eventRequest.startTime())
-                .endTime(eventRequest.endTime())
-                .roomId(eventRequest.roomId())
-                .Status("PENDING")
-                .bookingId(bookingId)
-                .build();
-
-        // Save the event in the database
-        Event savedEvent = eventRepository.save(event);
-
-        // Return an EventResponse using the saved event data
-        return new EventResponse(
-                savedEvent.getId(),
-                savedEvent.getEventName(),
-                savedEvent.getOrganizerId(),
-                savedEvent.getEventType(),
-                savedEvent.getExpectedAttendees(),
-                savedEvent.getRoomId(),
-                savedEvent.getStartTime(),
-                savedEvent.getEndTime(),
-                savedEvent.getStatus(),
-                savedEvent.getBookingId()
-        );
-    }
-
-    @Override
-    public List<EventResponse> getAllEvents() {
-        return eventRepository.findAll()
-                .stream()
-                .map(event -> new EventResponse(
-                        event.getId(),
-                        event.getEventName(),
-                        event.getOrganizerId(),
-                        event.getEventType(),
-                        event.getExpectedAttendees(),
-                        event.getRoomId(),
-                        event.getStartTime(),
-                        event.getEndTime(),
-                        event.getStatus(),
-                        event.getBookingId()))
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public EventResponse getEventById(String eventId) {
-        Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new IllegalArgumentException("Event not found with id: " + eventId));
-
+    private EventResponse mapToEventResponse(Event event) {
         return new EventResponse(
                 event.getId(),
                 event.getEventName(),
@@ -116,18 +44,60 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
+    public EventResponse createEvent(EventRequest eventRequest) {
+        String organizerType = getOrganizerType(eventRequest.organizerId());
+        String bookingId;
+
+        if ("student".equalsIgnoreCase(organizerType) && eventRequest.expectedAttendees() > 25) {
+            throw new IllegalArgumentException("Students cannot organize events with more than 25 attendees.");
+        }
+        if (eventRequest.expectedAttendees() > getRoomCapacity(eventRequest.roomId())) {
+            throw new IllegalArgumentException("Room capacity exceeded.");
+        }
+        try {
+            bookingId =makeBookingForEvent(eventRequest.organizerId(), eventRequest.roomId(), eventRequest.startTime(), eventRequest.endTime());
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Booking failed: " + e.getMessage());
+        }
+        Event event = Event.builder()
+                .eventName(eventRequest.eventName())
+                .organizerId(eventRequest.organizerId())
+                .eventType(eventRequest.eventType())
+                .expectedAttendees(eventRequest.expectedAttendees())
+                .startTime(eventRequest.startTime())
+                .endTime(eventRequest.endTime())
+                .roomId(eventRequest.roomId())
+                .Status("PENDING")
+                .bookingId(bookingId)
+                .build();
+
+        eventRepository.save(event);
+        return mapToEventResponse(event);
+    }
+
+    @Override
+    public List<EventResponse> getAllEvents() {
+        return eventRepository.findAll()
+                .stream()
+                .map(this::mapToEventResponse) // Use the mapping method here
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public EventResponse getEventById(String eventId) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new IllegalArgumentException("Event not found with id: " + eventId));
+        return mapToEventResponse(event);
+    }
+
+    @Override
     public void deleteEventById(String eventId) {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new IllegalArgumentException("Event not found with id: " + eventId));
-
         deleteBooking(event.getBookingId());
-
         eventRepository.deleteById(eventId);
     }
-    private void deleteBooking(String bookingId) {
-        String url = BOOKING_SERVICE_URL + "/" + bookingId;
-        restTemplate.delete(url);
-    }
+
     @Override
     public void updateEventStatus(String eventId, String status) {
         Event event = eventRepository.findById(eventId)
@@ -135,8 +105,12 @@ public class EventServiceImpl implements EventService {
         event.setStatus(status);
         eventRepository.save(event);
     }
+    private void deleteBooking(String bookingId) {
+        String url = BOOKING_SERVICE_URL + "/" + bookingId;
+        restTemplate.delete(url);
+    }
 
-    private String getOrganizerRole(String organizerId) {
+    private String getOrganizerType(String organizerId) {
         String url = USER_SERVICE_URL.replace("{Id}", organizerId);
         return restTemplate.getForObject(url, String.class);
     }

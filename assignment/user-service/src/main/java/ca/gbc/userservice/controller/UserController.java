@@ -73,8 +73,8 @@ public class    UserController {
         List<UserResponse> users = userService.getUsersByUserType(userType);
         return ResponseEntity.ok(users);
     }
-    @GetMapping("/{Id}/role")
-    public ResponseEntity<String> getUserRole(@PathVariable("Id") Long userId) {
+    @GetMapping("/{Id}/type")
+    public ResponseEntity<String> getUserType(@PathVariable("Id") Long userId) {
         String userType = userService.getUserTypeById(userId);
         return ResponseEntity.ok(userType);
     }

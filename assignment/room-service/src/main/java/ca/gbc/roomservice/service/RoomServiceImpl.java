@@ -30,8 +30,7 @@ public class RoomServiceImpl implements RoomService {
 
         Room savedRoom = roomRepository.save(room);
         log.info("Room with ID {} created successfully", savedRoom.getId());
-
-        return new RoomResponse(room.getId(),room.getRoomName(),room.getCapacity(),room.getFeatures(),room.isAvailability());
+        return mapToRoomResponse(room);
     }
 
     @Override
@@ -133,7 +132,6 @@ public class RoomServiceImpl implements RoomService {
 
     private RoomResponse changeRoomAvailability(String id, boolean available) {
         Optional<Room> roomOpt = roomRepository.findById(id);
-
         if (roomOpt.isPresent()) {
             Room room = roomOpt.get();
             room.setAvailability(available);

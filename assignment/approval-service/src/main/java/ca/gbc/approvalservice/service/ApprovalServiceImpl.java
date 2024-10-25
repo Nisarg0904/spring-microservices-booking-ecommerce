@@ -23,16 +23,16 @@ public class ApprovalServiceImpl implements ApprovalService {
     private final RestTemplate restTemplate;
 
     private static final String EVENT_SERVICE_URL = "http://localhost:8089/api/events/{eventId}/status";
-    private static final String USER_SERVICE_URL = "http://localhost:8087/api/users/{userId}/role";
+    private static final String USER_SERVICE_URL = "http://localhost:8087/api/users/{userId}/type";
     private static final String BOOKING_SERVICE_URL = "http://localhost:8088/api/bookings/{bookingId}";
 
     @Override
     public ApprovalResponse approveEvent(ApprovalRequest approvalRequest) {
-        String userRole = getUserRole(approvalRequest.userId());
-        if (!"staff".equalsIgnoreCase(userRole)) {
+        String userType = getUserType(approvalRequest.userId());
+        if (!"staff".equalsIgnoreCase(userType)) {
             throw new IllegalStateException("Only staff members can approve or reject events.");
         }
-        if (approvalRepository.findByEventId(approvalRequest.eventId())!=null) {
+        if (approvalRepository.findByEventId(approvalRequest.eventId()) != null) {
             throw new IllegalStateException("This event has already been approved or rejected.");
         }
         EventResponse event = getEventById(approvalRequest.eventId());
@@ -51,13 +51,7 @@ public class ApprovalServiceImpl implements ApprovalService {
             deleteBooking(event.bookingId());
         }
         Approval savedApproval = approvalRepository.save(approval);
-        return new ApprovalResponse(
-                savedApproval.getId(),
-                savedApproval.getUserId(),
-                savedApproval.getEventId(),
-                savedApproval.isApproved(),
-                savedApproval.getComments()
-        );
+        return mapToApprovalResponse(savedApproval);
     }
 
     @Override
@@ -65,13 +59,15 @@ public class ApprovalServiceImpl implements ApprovalService {
         return approvalRepository.findAll()
                 .stream()
                 .map(this::mapToApprovalResponse)
-                .collect(Collectors.toList());    }
+                .collect(Collectors.toList());
+    }
 
     @Override
     public ApprovalResponse getApprovalById(String approvalId) {
         Approval approval = approvalRepository.findById(approvalId)
                 .orElseThrow(() -> new IllegalArgumentException("Approval not found with id: " + approvalId));
-        return mapToApprovalResponse(approval);    }
+        return mapToApprovalResponse(approval);
+    }
 
     @Override
     public List<ApprovalResponse> getApprovalsByStatus(String status) {
@@ -81,17 +77,11 @@ public class ApprovalServiceImpl implements ApprovalService {
                     .map(this::mapToApprovalResponse)
                     .collect(Collectors.toList());
         }
-
-            return approvalRepository.findByIsApproved(false)
-                    .stream()
-                    .map(this::mapToApprovalResponse)
-                    .collect(Collectors.toList());
-
+        return approvalRepository.findByIsApproved(false)
+                .stream()
+                .map(this::mapToApprovalResponse)
+                .collect(Collectors.toList());
     }
-
-
-
-
 
     private ApprovalResponse mapToApprovalResponse(Approval approval) {
         return new ApprovalResponse(
@@ -103,14 +93,16 @@ public class ApprovalServiceImpl implements ApprovalService {
         );
     }
 
-    private String getUserRole(String userId) {
+    private String getUserType(String userId) {
         String url = USER_SERVICE_URL.replace("{userId}", userId);
         return restTemplate.getForObject(url, String.class);
     }
-    private void updateEventStatus(String eventId, String Status) {
+
+    private void updateEventStatus(String eventId, String status) {
         String url = EVENT_SERVICE_URL.replace("{eventId}", eventId);
-            restTemplate.patchForObject(url, new EventRequest(Status), Void.class);
+        restTemplate.patchForObject(url, new EventRequest(status), Void.class);
     }
+
     private EventResponse getEventById(String eventId) {
         String url = EVENT_SERVICE_URL.replace("{eventId}/status", eventId);
         ResponseEntity<EventResponse> response = restTemplate.getForEntity(url, EventResponse.class);
@@ -120,6 +112,7 @@ public class ApprovalServiceImpl implements ApprovalService {
             throw new IllegalStateException("Failed to fetch event details");
         }
     }
+
     private void deleteBooking(String bookingId) {
         String url = BOOKING_SERVICE_URL.replace("{bookingId}", bookingId);
         restTemplate.delete(url);

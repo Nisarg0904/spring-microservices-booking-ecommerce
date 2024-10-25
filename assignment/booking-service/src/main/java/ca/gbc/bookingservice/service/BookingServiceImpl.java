@@ -22,10 +22,26 @@ public class BookingServiceImpl implements BookingService {
     private final BookingRepository bookingRepository;
 
     private static final String ROOM_SERVICE_URL = "http://localhost:8086/api/rooms/{roomId}/availability";
+    private static final String USER_SERVICE_URL = "http://localhost:8087/api/users/{userId}";
 
+
+
+    private BookingResponse mapToBookingResponse(Booking booking) {
+        return new BookingResponse(
+                booking.getId(),
+                booking.getUserId(),
+                booking.getRoomId(),
+                booking.getStartTime(),
+                booking.getEndTime(),
+                booking.getPurpose()
+        );
+    }
 
     @Override
     public BookingResponse createBooking(BookingRequest bookingRequest) {
+        if (!isUserValid(bookingRequest.userId())) {
+            throw new IllegalStateException("User does not exist");
+        }
         if (!isRoomAvailable(bookingRequest.roomId(), bookingRequest.startTime().toString(), bookingRequest.endTime().toString())) {
             throw new IllegalStateException("Room is not available for the selected time range");
         }
@@ -37,44 +53,42 @@ public class BookingServiceImpl implements BookingService {
                 .purpose(bookingRequest.purpose())
                 .build();
 
-        Booking savedBooking = bookingRepository.save(booking);
+        bookingRepository.save(booking);
 
-        return new BookingResponse(
-                savedBooking.getId(),
-                savedBooking.getUserId(),
-                savedBooking.getRoomId(),
-                savedBooking.getStartTime(),
-                savedBooking.getEndTime(),
-                savedBooking.getPurpose()
-        );
+        return mapToBookingResponse(booking);
+
     }
 
     @Override
     public List<BookingResponse> getAllBookings() {
         return bookingRepository.findAll()
                 .stream()
-                .map(booking -> new BookingResponse(
-                        booking.getId(),
-                        booking.getUserId(),
-                        booking.getRoomId(),
-                        booking.getStartTime(),
-                        booking.getEndTime(),
-                        booking.getPurpose()))
-                .collect(Collectors.toList());    }
+                .map(this::mapToBookingResponse)
+                .collect(Collectors.toList());
+    }
 
     @Override
     public BookingResponse getBookingById(String bookingId) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new IllegalArgumentException("Booking not found with id: " + bookingId));
+        return mapToBookingResponse(booking);
+    }
 
-        return new BookingResponse(
-                booking.getId(),
-                booking.getUserId(),
-                booking.getRoomId(),
-                booking.getStartTime(),
-                booking.getEndTime(),
-                booking.getPurpose()
-        );    }
+    @Override
+    public void deleteBookingById(String bookingId) {
+        bookingRepository.deleteById(bookingId);
+    }
+
+    private boolean isUserValid(String userId) {
+        String url = USER_SERVICE_URL.replace("{userId}", userId);
+        try {
+            restTemplate.getForObject(url, Void.class);
+            return true;
+        } catch (RestClientException e) {
+            System.err.println("UserService is unavailable or user does not exist: " + e.getMessage());
+            return false;
+        }
+    }
 
     @Override
     public boolean isRoomAvailable(String roomId, String startTime, String endTime) {
@@ -98,12 +112,8 @@ public class BookingServiceImpl implements BookingService {
         } catch (RestClientException e) {
             System.err.println("RoomService is unavailable: " + e.getMessage());
         }
-        // Default to false if RoomService is unavailable or returns an error
         return false;
     }
 
-    @Override
-    public void deleteBookingById(String bookingId) {
-        bookingRepository.deleteById(bookingId);
-    }
+
 }
