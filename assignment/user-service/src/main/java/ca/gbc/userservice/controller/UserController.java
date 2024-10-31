@@ -24,12 +24,15 @@ public class    UserController {
 
     @PostMapping
     public ResponseEntity<UserResponse> createUser(@RequestBody UserRequest userRequest) {
-        UserResponse newUser = userService.createUser(userRequest);
-        return new ResponseEntity<>(newUser, HttpStatus.CREATED);
+        try {
+            UserResponse newUser = userService.createUser(userRequest);
+            return new ResponseEntity<>(newUser, HttpStatus.CREATED);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        }
     }
 
 
-    // Get a user by their ID
     @GetMapping("/{id}")
     public ResponseEntity<UserResponse> getUserById(@PathVariable Long id) {
         Optional<UserResponse> userResponse = userService.getUserById(id);
@@ -38,14 +41,12 @@ public class    UserController {
     }
 
 
-    // Get all users
     @GetMapping
     public ResponseEntity<List<UserResponse>> getAllUsers() {
         List<UserResponse> users = userService.getAllUsers();
         return ResponseEntity.ok(users);
     }
 
-    // Update a user by their ID
     @PutMapping("/{id}")
     public ResponseEntity<UserResponse> updateUser(@PathVariable Long id, @RequestBody UserRequest userRequest) {
         Optional<UserResponse> updatedUser = userService.updateUser(id, userRequest);
@@ -53,14 +54,12 @@ public class    UserController {
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
     }
 
-    // Delete a user by their ID
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
         return ResponseEntity.noContent().build();
     }
 
-    // Get users by role
     @GetMapping("/role/{role}")
     public ResponseEntity<List<UserResponse>> getUsersByRole(@PathVariable String role) {
         List<UserResponse> users = userService.getUsersByRole(role);
@@ -77,6 +76,12 @@ public class    UserController {
     public ResponseEntity<String> getUserType(@PathVariable("Id") Long userId) {
         String userType = userService.getUserTypeById(userId);
         return ResponseEntity.ok(userType);
+    }
+    @PostMapping("/signin")
+    public ResponseEntity<UserResponse> signIn(@RequestParam String email, @RequestParam String password) {
+        Optional<UserResponse> userResponse = userService.signIn(email, password);
+        return userResponse.map(ResponseEntity::ok)
+                .orElse(ResponseEntity.status(HttpStatus.UNAUTHORIZED).build());
     }
 }
 

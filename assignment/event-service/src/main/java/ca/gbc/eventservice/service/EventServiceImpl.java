@@ -7,6 +7,7 @@ import ca.gbc.eventservice.dto.EventResponse;
 import ca.gbc.eventservice.model.Event;
 import ca.gbc.eventservice.repository.EventRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -19,6 +20,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class EventServiceImpl implements EventService {
 
     private final EventRepository eventRepository;
@@ -55,7 +57,7 @@ public class EventServiceImpl implements EventService {
             throw new IllegalArgumentException("Room capacity exceeded.");
         }
         try {
-            bookingId =makeBookingForEvent(eventRequest.organizerId(), eventRequest.roomId(), eventRequest.startTime(), eventRequest.endTime());
+            bookingId = makeBookingForEvent(eventRequest.organizerId(), eventRequest.roomId(), eventRequest.startTime(), eventRequest.endTime());
         } catch (Exception e) {
             throw new IllegalArgumentException("Booking failed: " + e.getMessage());
         }
@@ -105,6 +107,7 @@ public class EventServiceImpl implements EventService {
         event.setStatus(status);
         eventRepository.save(event);
     }
+
     private void deleteBooking(String bookingId) {
         String url = BOOKING_SERVICE_URL + "/" + bookingId;
         restTemplate.delete(url);
@@ -122,13 +125,19 @@ public class EventServiceImpl implements EventService {
 
     private String makeBookingForEvent(String userId, String roomId, LocalDateTime startTime, LocalDateTime endTime) {
         BookingRequest bookingRequest = new BookingRequest(userId, roomId, startTime, endTime, "Event Booking");
-        ResponseEntity<BookingResponse> response = restTemplate.postForEntity(BOOKING_SERVICE_URL, bookingRequest, BookingResponse.class);
-
-        if (response.getStatusCode() == HttpStatus.CREATED && response.getBody() != null) {
-            return response.getBody().id();
-        } else {
-            throw new IllegalStateException("Failed to create booking: " + response.getStatusCode());
+        try {
+            ResponseEntity<BookingResponse> response = restTemplate.postForEntity(BOOKING_SERVICE_URL, bookingRequest, BookingResponse.class);
+            if (response.getStatusCode() == HttpStatus.CREATED && response.getBody() != null) {
+                return response.getBody().id();
+            } else {
+                throw new IllegalStateException("Failed to create booking: " + response.getStatusCode());
+            }
+        } catch (Exception e) {
+            log.error("Error during booking creation", e);
+            throw new IllegalStateException("Booking service is unavailable");
         }
     }
-
 }
+
+
+

@@ -11,6 +11,7 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -68,16 +69,19 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public BookingResponse getBookingById(String bookingId) {
-        Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new IllegalArgumentException("Booking not found with id: " + bookingId));
-        return mapToBookingResponse(booking);
+    public Optional<BookingResponse> getBookingById(String bookingId) {
+        return bookingRepository.findById(bookingId)
+                .map(this::mapToBookingResponse);  // Map found booking to response
     }
+
 
     @Override
     public void deleteBookingById(String bookingId) {
         bookingRepository.deleteById(bookingId);
     }
+
+
+
 
     private boolean isUserValid(String userId) {
         String url = USER_SERVICE_URL.replace("{userId}", userId);

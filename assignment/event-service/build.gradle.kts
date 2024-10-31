@@ -36,6 +36,8 @@ dependencies {
 	testImplementation("io.projectreactor:reactor-test")
 	testImplementation("org.testcontainers:junit-jupiter")
 	testImplementation("org.testcontainers:mongodb")
+	testImplementation("io.rest-assured:rest-assured")
+
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 

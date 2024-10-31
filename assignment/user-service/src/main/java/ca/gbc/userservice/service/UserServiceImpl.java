@@ -37,6 +37,9 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserResponse createUser(UserRequest userRequest) {
+        if (userRepository.findByEmail(userRequest.email()) != null) {
+            throw new IllegalArgumentException("A user with this email already exists.");
+        }
         User user = convertToUser(userRequest);
         User savedUser = userRepository.save(user);
         return convertToUserResponse(savedUser);    }
@@ -56,8 +59,7 @@ public class UserServiceImpl implements UserService {
     public Optional<UserResponse> updateUser(Long id, UserRequest userRequest) {
         return userRepository.findById(id).map(user -> {
             user.setName(userRequest.name());
-            user.setEmail(userRequest.email());
-            user.setPassword(userRequest.password()); // Ensure this is hashed
+            user.setPassword(userRequest.password());
             user.setRole(userRequest.role());
             user.setUserType(userRequest.userType());
             User updatedUser = userRepository.save(user);
@@ -81,11 +83,19 @@ public class UserServiceImpl implements UserService {
     public List<UserResponse> getUsersByRole(String role) {
         return userRepository.findByRole(role).stream()
                 .map(this::convertToUserResponse)
-                .collect(Collectors.toList());    }
+                .collect(Collectors.toList());
+    }
 
     @Override
     public List<UserResponse> getUsersByUserType(String userType) {
         return userRepository.findByUserType(userType).stream()
                 .map(this::convertToUserResponse)
-                .collect(Collectors.toList());    }
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public Optional<UserResponse> signIn(String email, String password) {
+        User user = userRepository.findByEmailAndPassword(email, password);
+        return Optional.ofNullable(user).map(this::convertToUserResponse);
+    }
 }
