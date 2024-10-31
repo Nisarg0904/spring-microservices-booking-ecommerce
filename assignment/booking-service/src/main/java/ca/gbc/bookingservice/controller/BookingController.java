@@ -32,8 +32,9 @@ public class BookingController {
     // Get a booking by ID
     @GetMapping("/{id}")
     public ResponseEntity<BookingResponse> getBookingById(@PathVariable("id") String bookingId) {
-        BookingResponse bookingResponse = bookingService.getBookingById(bookingId);
-        return ResponseEntity.ok(bookingResponse);
+        return bookingService.getBookingById(bookingId)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
     }
 
     // Delete a booking by ID

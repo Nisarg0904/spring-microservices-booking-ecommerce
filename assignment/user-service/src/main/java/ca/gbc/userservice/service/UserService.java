@@ -13,6 +13,8 @@ public interface UserService {
     Optional<UserResponse> getUserById(Long id);
 
     List<UserResponse> getAllUsers();
+    Optional<UserResponse> signIn(String email, String password);
+
 
     Optional<UserResponse> updateUser(Long id, UserRequest userRequest);
 
