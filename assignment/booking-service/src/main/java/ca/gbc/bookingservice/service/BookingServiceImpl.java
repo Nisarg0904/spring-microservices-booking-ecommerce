@@ -79,6 +79,9 @@ public class BookingServiceImpl implements BookingService {
         bookingRepository.deleteById(bookingId);
     }
 
+
+
+
     private boolean isUserValid(String userId) {
         String url = USER_SERVICE_URL.replace("{userId}", userId);
         try {
