@@ -51,7 +51,7 @@ public class RoomServiceImpl implements RoomService {
             return mapToRoomResponse(updatedRoom);
         } else {
             log.error("Room with ID {} not found", id);
-            return null;  // You can throw an exception or return a proper error response.
+            return null;
         }    }
 
     @Override

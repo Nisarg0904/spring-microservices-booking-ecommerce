@@ -67,19 +67,15 @@ class EventServiceApplicationTests {
 		String startTime = LocalDateTime.now().plusDays(1).format(formatter);
 		String endTime = LocalDateTime.now().plusDays(1).plusHours(2).format(formatter);
 
-		// Mock user service response
 		mockServer.expect(once(), requestTo("http://localhost:8087/api/users/" + organizerId + "/type"))
 				.andRespond(withStatus(HttpStatus.OK).contentType(MediaType.APPLICATION_JSON).body("\"student\""));
 
-		// Mock room service response
 		mockServer.expect(once(), requestTo("http://localhost:8086/api/rooms/" + roomId + "/capacity"))
 				.andRespond(withStatus(HttpStatus.OK).contentType(MediaType.APPLICATION_JSON).body("50"));
 
-		// Mock booking service response
 		mockServer.expect(once(), requestTo("http://localhost:8088/api/bookings"))
 				.andRespond(withStatus(HttpStatus.CREATED).contentType(MediaType.APPLICATION_JSON).body("{\"id\":\"booking123\"}"));
 
-		// Send the event creation request
 		String requestBody = String.format("""
             {
                 "id": null,
@@ -126,19 +122,15 @@ class EventServiceApplicationTests {
 		String startTime = LocalDateTime.now().plusDays(1).format(formatter);
 		String endTime = LocalDateTime.now().plusDays(1).plusHours(2).format(formatter);
 
-		// Mock user service response
 		mockServer.expect(once(), requestTo("http://localhost:8087/api/users/" + organizerId + "/type"))
 				.andRespond(withStatus(HttpStatus.OK).contentType(MediaType.APPLICATION_JSON).body("\"student\""));
 
-		// Mock room service response
 		mockServer.expect(once(), requestTo("http://localhost:8086/api/rooms/" + roomId + "/capacity"))
 				.andRespond(withStatus(HttpStatus.OK).contentType(MediaType.APPLICATION_JSON).body("50"));
 
-		// Mock booking service response
 		mockServer.expect(once(), requestTo("http://localhost:8088/api/bookings"))
 				.andRespond(withStatus(HttpStatus.CREATED).contentType(MediaType.APPLICATION_JSON).body("{\"id\":\"booking123\"}"));
 
-		// Send the event creation request
 		String requestBody = String.format("""
             {
                 "id": null,
@@ -162,7 +154,6 @@ class EventServiceApplicationTests {
 				.statusCode(201)
 				.extract().path("id");
 
-		// Retrieve the event by ID
 		RestAssured.given()
 				.contentType("application/json")
 				.get("/api/events/" + eventId)
@@ -179,25 +170,20 @@ class EventServiceApplicationTests {
 		String startTime = LocalDateTime.now().plusDays(1).format(formatter);
 		String endTime = LocalDateTime.now().plusDays(1).plusHours(2).format(formatter);
 
-		// Mock user service response
 		mockServer.expect(once(), requestTo("http://localhost:8087/api/users/" + organizerId + "/type"))
 				.andRespond(withStatus(HttpStatus.OK).contentType(MediaType.APPLICATION_JSON).body("\"student\""));
 
-		// Mock room service response
 		mockServer.expect(once(), requestTo("http://localhost:8086/api/rooms/" + roomId + "/capacity"))
 				.andRespond(withStatus(HttpStatus.OK).contentType(MediaType.APPLICATION_JSON).body("50"));
 
-		// Mock booking service POST response
 		mockServer.expect(once(), requestTo("http://localhost:8088/api/bookings"))
 				.andRespond(withStatus(HttpStatus.CREATED).contentType(MediaType.APPLICATION_JSON).body("{\"id\":\"booking123\"}"));
 
-		// Mock booking service DELETE response
 		mockServer.expect(requestTo("http://localhost:8088/api/bookings/booking123"))
 				.andExpect(request -> assertEquals(HttpMethod.DELETE, request.getMethod()))
 				.andRespond(withStatus(HttpStatus.NO_CONTENT));
 
 
-		// Send the event creation request
 		String requestBody = String.format("""
         {
             "id": null,
@@ -213,7 +199,6 @@ class EventServiceApplicationTests {
         }
         """, organizerId, roomId, startTime, endTime);
 
-		// Create the event and retrieve its ID
 		String eventId = RestAssured.given()
 				.contentType("application/json")
 				.body(requestBody)
@@ -222,13 +207,11 @@ class EventServiceApplicationTests {
 				.statusCode(201)
 				.extract().path("id");
 
-		// Delete the event
 		RestAssured.given()
 				.delete("/api/events/" + eventId)
 				.then()
 				.statusCode(204);
 
-		// Verify the event no longer exists
 		RestAssured.given()
 				.get("/api/events/" + eventId)
 				.then()
@@ -242,19 +225,15 @@ class EventServiceApplicationTests {
 		String startTime = LocalDateTime.now().plusDays(1).format(formatter);
 		String endTime = LocalDateTime.now().plusDays(1).plusHours(2).format(formatter);
 
-		// Mock user service response
 		mockServer.expect(once(), requestTo("http://localhost:8087/api/users/" + organizerId + "/type"))
 				.andRespond(withStatus(HttpStatus.OK).contentType(MediaType.APPLICATION_JSON).body("\"student\""));
 
-		// Mock room service response
 		mockServer.expect(once(), requestTo("http://localhost:8086/api/rooms/" + roomId + "/capacity"))
 				.andRespond(withStatus(HttpStatus.OK).contentType(MediaType.APPLICATION_JSON).body("50"));
 
-		// Mock booking service response
 		mockServer.expect(once(), requestTo("http://localhost:8088/api/bookings"))
 				.andRespond(withStatus(HttpStatus.CREATED).contentType(MediaType.APPLICATION_JSON).body("{\"id\":\"booking123\"}"));
 
-		// Send the event creation request
 		String requestBody = String.format("""
             {
                 "id": null,
@@ -278,7 +257,6 @@ class EventServiceApplicationTests {
 				.statusCode(201)
 				.extract().path("id");
 
-		// Update the event status
 		RestAssured.given()
 				.contentType("application/json")
 				.body("{\"Status\":\"CONFIRMED\"}")
@@ -286,8 +264,7 @@ class EventServiceApplicationTests {
 				.then()
 				.statusCode(204);
 
-		// Verify the status was updated
-		RestAssured.given()
+ 		RestAssured.given()
 				.get("/api/events/" + eventId)
 				.then()
 				.statusCode(200)

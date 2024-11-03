@@ -81,7 +81,6 @@ class UserServiceApplicationTests {
                 }
                 """;
 
-        // Create the first user
         RestAssured.given()
                 .contentType("application/json")
                 .body(requestBody)
@@ -89,13 +88,12 @@ class UserServiceApplicationTests {
                 .then()
                 .statusCode(201);
 
-        // Attempt to create a second user with the same email
         RestAssured.given()
                 .contentType("application/json")
                 .body(requestBody)
                 .post("/api/users")
                 .then()
-                .statusCode(400);  // Expect a 400 Bad Request due to duplicate email
+                .statusCode(400);
     }
 
     @Test
@@ -111,7 +109,6 @@ class UserServiceApplicationTests {
                 }
                 """;
 
-        // Create the user
         Long userId = ((Integer) RestAssured.given()
                 .contentType("application/json")
                 .body(requestBody)
@@ -131,7 +128,6 @@ class UserServiceApplicationTests {
                 }
                 """;
 
-        // Update the user's name, password, role, and userType, but not email
         RestAssured.given()
                 .contentType("application/json")
                 .body(updateRequestBody)
@@ -139,7 +135,7 @@ class UserServiceApplicationTests {
                 .then()
                 .statusCode(200)
                 .body("name", Matchers.equalTo("Alice Smith"))
-                .body("email", Matchers.equalTo("alicedoe@example.com"))  // Email remains unchanged
+                .body("email", Matchers.equalTo("alicedoe@example.com"))
                 .body("role", Matchers.equalTo("ADMIN"))
                 .body("userType", Matchers.equalTo("staff"));
     }
@@ -157,7 +153,6 @@ class UserServiceApplicationTests {
                 }
                 """;
 
-        // Create the user
         Long userId = ((Integer) RestAssured.given()
                 .contentType("application/json")
                 .body(requestBody)
@@ -166,13 +161,11 @@ class UserServiceApplicationTests {
                 .statusCode(201)
                 .extract().path("id")).longValue();
 
-        // Delete the user
         RestAssured.given()
                 .delete("/api/users/" + userId)
                 .then()
                 .statusCode(204);
 
-        // Verify the user no longer exists
         RestAssured.given()
                 .get("/api/users/" + userId)
                 .then()
@@ -192,7 +185,6 @@ class UserServiceApplicationTests {
                 }
                 """;
 
-        // Create the user
         RestAssured.given()
                 .contentType("application/json")
                 .body(requestBody)
@@ -200,7 +192,6 @@ class UserServiceApplicationTests {
                 .then()
                 .statusCode(201);
 
-        // Attempt to sign in with correct email and password
         RestAssured.given()
                 .queryParam("email", "charliedoe@example.com")
                 .queryParam("password", "mypassword")
@@ -226,7 +217,6 @@ class UserServiceApplicationTests {
                 }
                 """;
 
-        // Create the user
         RestAssured.given()
                 .contentType("application/json")
                 .body(requestBody)
@@ -234,12 +224,11 @@ class UserServiceApplicationTests {
                 .then()
                 .statusCode(201);
 
-        // Attempt to sign in with incorrect password
         RestAssured.given()
                 .queryParam("email", "danadoe@example.com")
                 .queryParam("password", "wrongpassword")
                 .post("/api/users/signin")
                 .then()
-                .statusCode(401);  // Expect 401 Unauthorized
+                .statusCode(401);
     }
 }

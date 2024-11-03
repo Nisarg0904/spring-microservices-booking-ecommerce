@@ -69,11 +69,9 @@ class BookingServiceApplicationTests {
 		String startTime = LocalDateTime.now().plusDays(1).format(formatter);
 		String endTime = LocalDateTime.now().plusDays(1).plusHours(2).format(formatter);
 
-		// Mock user service
 		mockServer.expect(once(), requestTo("http://localhost:8087/api/users/" + userId))
 				.andRespond(withStatus(HttpStatus.OK).contentType(APPLICATION_JSON));
 
-		// Mock room service with JSON Boolean response
 		mockServer.expect(once(), requestTo("http://localhost:8086/api/rooms/" + roomId + "/availability"))
 				.andRespond(withStatus(HttpStatus.OK)
 						.contentType(APPLICATION_JSON)
@@ -109,11 +107,9 @@ class BookingServiceApplicationTests {
 		String startTime = LocalDateTime.now().plusDays(1).format(formatter);
 		String endTime = LocalDateTime.now().plusDays(1).plusHours(2).format(formatter);
 
-		// Mock user service
 		mockServer.expect(once(), requestTo("http://localhost:8087/api/users/" + userId))
 				.andRespond(withStatus(HttpStatus.OK).contentType(APPLICATION_JSON));
 
-		// Mock room service with JSON Boolean response
 		mockServer.expect(once(), requestTo("http://localhost:8086/api/rooms/" + roomId + "/availability"))
 				.andRespond(withStatus(HttpStatus.OK)
 						.contentType(APPLICATION_JSON)
@@ -187,7 +183,6 @@ class BookingServiceApplicationTests {
 				.statusCode(201)
 				.extract().path("id");
 
-		// Retrieve the booking by ID
 		RestAssured.given()
 				.contentType("application/json")
 				.get("/api/bookings/" + bookingId)
@@ -232,13 +227,11 @@ class BookingServiceApplicationTests {
 				.statusCode(201)
 				.extract().path("id");
 
-		// Delete the booking
 		RestAssured.given()
 				.delete("/api/bookings/" + bookingId)
 				.then()
 				.statusCode(204);
 
-		// Verify the booking no longer exists
 		RestAssured.given()
 				.get("/api/bookings/" + bookingId)
 				.then()

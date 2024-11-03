@@ -69,16 +69,13 @@ public class ApprovalServiceApplicationTests {
 		String userId = "user123";
 		String eventId = "event123";
 
-		// Mock user type
 		mockServer.expect(once(), requestTo("http://localhost:8087/api/users/" + userId + "/type"))
 				.andRespond(withSuccess("staff", MediaType.TEXT_PLAIN));
 
-		// Mock GET request for retrieving event details
 		mockServer.expect(once(), requestTo("http://localhost:8089/api/events/" + eventId))
 				.andExpect(method(HttpMethod.GET))
 				.andRespond(withSuccess("{\"id\":\"" + eventId + "\", \"bookingId\":\"booking123\"}", MediaType.APPLICATION_JSON));
 
-		// Mock PATCH request for updating event status
 		mockServer.expect(once(), requestTo("http://localhost:8089/api/events/" + eventId + "/status"))
 				.andExpect(method(HttpMethod.PATCH))
 				.andRespond(withStatus(HttpStatus.NO_CONTENT));
@@ -101,21 +98,17 @@ public class ApprovalServiceApplicationTests {
 		String eventId = "event123";
 		String bookingId = "booking456";
 
-		// Mock user type
 		mockServer.expect(once(), requestTo("http://localhost:8087/api/users/" + userId + "/type"))
 				.andRespond(withSuccess("staff", MediaType.TEXT_PLAIN));
 
-		// Mock event status update
 		mockServer.expect(once(), requestTo("http://localhost:8089/api/events/" + eventId))
 				.andExpect(method(HttpMethod.GET))
 				.andRespond(withSuccess("{\"id\":\"" + eventId + "\", \"bookingId\":\"booking456\"}", MediaType.APPLICATION_JSON));
 
-		// Mock PATCH request for updating event status
 		mockServer.expect(once(), requestTo("http://localhost:8089/api/events/" + eventId + "/status"))
 				.andExpect(method(HttpMethod.PATCH))
 				.andRespond(withStatus(HttpStatus.NO_CONTENT));
 
-		// Mock booking deletion
 		mockServer.expect(once(), requestTo("http://localhost:8088/api/bookings/" + bookingId))
 				.andExpect(method(HttpMethod.DELETE))
 				.andRespond(withStatus(HttpStatus.NO_CONTENT));

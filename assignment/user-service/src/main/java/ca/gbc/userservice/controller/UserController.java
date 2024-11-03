@@ -66,7 +66,6 @@ public class    UserController {
         return ResponseEntity.ok(users);
     }
 
-    // Get users by userType (student, staff, faculty)
     @GetMapping("/type/{userType}")
     public ResponseEntity<List<UserResponse>> getUsersByUserType(@PathVariable String userType) {
         List<UserResponse> users = userService.getUsersByUserType(userType);

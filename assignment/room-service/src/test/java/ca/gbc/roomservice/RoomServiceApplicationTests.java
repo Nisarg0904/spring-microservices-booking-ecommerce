@@ -77,7 +77,6 @@ class RoomServiceApplicationTests {
                 }
                 """;
 
-        // First, create a room
         RestAssured.given()
                 .contentType("application/json")
                 .body(requestBody)
@@ -86,7 +85,6 @@ class RoomServiceApplicationTests {
                 .then()
                 .statusCode(201);
 
-        // Then, fetch all rooms
         RestAssured.given()
                 .contentType("application/json")
                 .when()
