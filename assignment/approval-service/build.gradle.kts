@@ -37,6 +37,8 @@ dependencies {
 	testImplementation("org.testcontainers:junit-jupiter")
 	testImplementation("org.testcontainers:mongodb")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+	testImplementation("io.rest-assured:rest-assured")
+
 
 	implementation("org.apache.httpcomponents.client5:httpclient5:5.2")
 
