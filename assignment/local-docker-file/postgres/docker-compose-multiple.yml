@@ -7,17 +7,30 @@ version: '3.9'
 services:
 
 
-  postgres:
+  postgres-user:
     image: postgres
     ports:
       - "5432:5432"
-    container_name: postgres-assignment
+    container_name: postgres-user
     environment:
       - POSTGRES_USER=admin
       - POSTGRES_PASSWORD=password
     volumes:
-      - ./data:/var/lib/postgresql/data
-      - ./init/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./data/user:/var/lib/postgresql/data
+      - ./init/user/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  postgres-room:
+    image: postgres
+    ports:
+      - "5433:5432"
+    container_name: postgres-room
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - ./data/room:/var/lib/postgresql/data
+      - ./init/room/init.sql:/docker-entrypoint-initdb.d/init.sql
+
 
   pgadmin:
     image: dpage/pgadmin4
@@ -28,3 +41,81 @@ services:
       - PGADMIN_DEFAULT_EMAIL=user@domain.ca
       - PGADMIN_DEFAULT_PASSWORD=password
 
+
+
+  mongodb-booking:
+    image: mongo:latest # put the version which you want to use
+    container_name: mongodb-booking
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=password
+    volumes:
+      - ./init/booking/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js
+      - ./data/booking:/data/db
+
+
+
+  mongodb-event:
+    image: mongo:latest # put the version which you want to use
+    container_name: mongodb-event
+    ports:
+      - "27018:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=password
+    volumes:
+      - ./init/event/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js
+      - ./data/event:/data/db
+
+
+
+  mongodb-approval:
+    image: mongo:latest # put the version which you want to use
+    container_name: mongodb-approval
+    ports:
+      - "27019:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=password
+    volumes:
+      - ./init/approval/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js
+      - ./data/approval:/data/db
+
+
+  mongo-express-booking:
+    image: mongo-express
+    ports:
+      - "8081:8081"
+    environment:
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=admin
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=password
+      - ME_CONFIG_MONGODB_SERVER=mongodb-booking
+    depends_on:
+      - mongodb-booking
+    container_name: mongo-express-booking
+
+  mongo-express-event:
+    image: mongo-express
+    ports:
+      - "8082:8081"
+    environment:
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=admin
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=password
+      - ME_CONFIG_MONGODB_SERVER=mongodb-event
+    depends_on:
+      - mongodb-event
+    container_name: mongo-express-event
+
+  mongo-express-approval:
+    image: mongo-express
+    ports:
+      - "8083:8081"
+    environment:
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=admin
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=password
+      - ME_CONFIG_MONGODB_SERVER=mongodb-approval
+    depends_on:
+      - mongodb-approval
+    container_name: mongo-express-approval

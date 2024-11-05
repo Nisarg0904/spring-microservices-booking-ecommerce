@@ -19,17 +19,18 @@ public class EventController {
     private final EventService eventService;
 
     @PostMapping
-    public ResponseEntity<EventResponse> createEvent(@RequestBody EventRequest eventRequest) {
+    public ResponseEntity<Object> createEvent(@RequestBody EventRequest eventRequest) {
         try {
             EventResponse eventResponse = eventService.createEvent(eventRequest);
             return new ResponseEntity<>(eventResponse, HttpStatus.CREATED);
         } catch (IllegalArgumentException e) {
-
-            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         } catch (Exception e) {
-            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+            e.printStackTrace();
+            return new ResponseEntity<>("An unexpected error occurred: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
 
     @GetMapping
     public ResponseEntity<List<EventResponse>> getAllEvents() {

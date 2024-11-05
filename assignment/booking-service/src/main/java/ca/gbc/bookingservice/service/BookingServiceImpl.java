@@ -5,6 +5,7 @@ import ca.gbc.bookingservice.dto.BookingResponse;
 import ca.gbc.bookingservice.model.Booking;
 import ca.gbc.bookingservice.repository.BookingRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestClientException;
@@ -18,14 +19,14 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class BookingServiceImpl implements BookingService {
 
+    @Value("${room.service.url}")
+    private String roomServiceUrl;
+    @Value("${user.service.url}")
+    private String userServiceUrl;
+
     private final RestTemplate restTemplate;
 
     private final BookingRepository bookingRepository;
-
-    private static final String ROOM_SERVICE_URL = "http://localhost:8086/api/rooms/{roomId}/availability";
-    private static final String USER_SERVICE_URL = "http://localhost:8087/api/users/{userId}";
-
-
 
     private BookingResponse mapToBookingResponse(Booking booking) {
         return new BookingResponse(
@@ -84,7 +85,7 @@ public class BookingServiceImpl implements BookingService {
 
 
     private boolean isUserValid(String userId) {
-        String url = USER_SERVICE_URL.replace("{userId}", userId);
+        String url =userServiceUrl+"/api/users/"+userId;
         try {
             restTemplate.getForObject(url, Void.class);
             return true;
@@ -96,7 +97,7 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public boolean isRoomAvailable(String roomId, String startTime, String endTime) {
-        String url = ROOM_SERVICE_URL.replace("{roomId}", roomId);
+        String url = roomServiceUrl+"/api/rooms/"+roomId+"/availability";
         try {
             Boolean isAvailable = restTemplate.getForObject(url, Boolean.class);
 

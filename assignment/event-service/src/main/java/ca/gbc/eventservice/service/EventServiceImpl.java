@@ -8,6 +8,7 @@ import ca.gbc.eventservice.model.Event;
 import ca.gbc.eventservice.repository.EventRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -23,12 +24,15 @@ import java.util.stream.Collectors;
 @Slf4j
 public class EventServiceImpl implements EventService {
 
+    @Value("${room.service.url}")
+    private String roomServiceUrl;
+    @Value("${user.service.url}")
+    private String userServiceUrl;
+    @Value("${booking.service.url}")
+    private String bookingServiceUrl;
+
     private final EventRepository eventRepository;
     private final RestTemplate restTemplate;
-
-    private static final String USER_SERVICE_URL = "http://localhost:8087/api/users/{Id}/type";
-    private static final String ROOM_SERVICE_URL = "http://localhost:8086/api/rooms/{Id}/capacity";
-    private static final String BOOKING_SERVICE_URL = "http://localhost:8088/api/bookings";
 
     private EventResponse mapToEventResponse(Event event) {
         return new EventResponse(
@@ -51,9 +55,13 @@ public class EventServiceImpl implements EventService {
         String bookingId;
 
         if ("student".equalsIgnoreCase(organizerType) && eventRequest.expectedAttendees() > 25) {
+            log.error("Event creation failed: Students cannot organize events with more than 25 attendees.");
+
             throw new IllegalArgumentException("Students cannot organize events with more than 25 attendees.");
         }
         if (eventRequest.expectedAttendees() > getRoomCapacity(eventRequest.roomId())) {
+            log.error("Event creation failed: Room capacity exceeded.");
+
             throw new IllegalArgumentException("Room capacity exceeded.");
         }
         try {
@@ -109,24 +117,24 @@ public class EventServiceImpl implements EventService {
     }
 
     private void deleteBooking(String bookingId) {
-        String url = BOOKING_SERVICE_URL + "/" + bookingId;
+        String url = bookingServiceUrl + "/api/bookings/" + bookingId;
         restTemplate.delete(url);
     }
 
     private String getOrganizerType(String organizerId) {
-        String url = USER_SERVICE_URL.replace("{Id}", organizerId);
+        String url = userServiceUrl+"/api/users/"+organizerId+"/type";
         return restTemplate.getForObject(url, String.class);
     }
 
     private int getRoomCapacity(String roomId) {
-        String url = ROOM_SERVICE_URL.replace("{Id}", roomId);
+        String url = roomServiceUrl+"/api/rooms/"+roomId+"/capacity" ;
         return restTemplate.getForObject(url, Integer.class);
     }
 
     private String makeBookingForEvent(String userId, String roomId, LocalDateTime startTime, LocalDateTime endTime) {
         BookingRequest bookingRequest = new BookingRequest(userId, roomId, startTime, endTime, "Event Booking");
         try {
-            ResponseEntity<BookingResponse> response = restTemplate.postForEntity(BOOKING_SERVICE_URL, bookingRequest, BookingResponse.class);
+            ResponseEntity<BookingResponse> response = restTemplate.postForEntity(bookingServiceUrl+"/api/bookings", bookingRequest, BookingResponse.class);
             if (response.getStatusCode() == HttpStatus.CREATED && response.getBody() != null) {
                 return response.getBody().id();
             } else {
@@ -134,7 +142,7 @@ public class EventServiceImpl implements EventService {
             }
         } catch (Exception e) {
             log.error("Error during booking creation", e);
-            throw new IllegalStateException("Booking service is unavailable");
+            throw new IllegalStateException("Error during booking creation:"+e.getMessage());
         }
     }
 }
