@@ -1,0 +1,169 @@
+#--------------------------------------
+# 1. docker-compose -p microservice-comp3095-assigment-booking -f docker-compose.yml up -d
+#   - this command will start the container in detached mode (-d) without rebuilding the image (if they exist)
+# 2. docker-compose -p microservice-comp3095-ecommerce -f docker-compose.yml up -d --build
+#   - this command forces the rebuild of images, even if they already exist, before starting them.
+#--------------------------------------------
+
+services:
+
+  booking-service:
+    image: booking-service
+    build:
+      context: ./booking-service
+      dockerfile: ./Dockerfile
+    ports:
+      - "8088:8088"
+    container_name: booking-service
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    depends_on:
+      - mongodb-booking
+    networks:
+      - spring
+
+  event-service:
+    image: event-service
+    build:
+      context: ./event-service
+      dockerfile: ./Dockerfile
+    ports:
+      - "8089:8089"
+    container_name: event-service
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    depends_on:
+      - mongodb-event
+    networks:
+      - spring
+
+  approval-service:
+    image: approval-service
+    build:
+      context: ./approval-service
+      dockerfile: ./Dockerfile
+    ports:
+      - "8090:8090"
+    container_name: approval-service
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    depends_on:
+      - mongodb-approval
+    networks:
+      - spring
+
+  user-service:
+    image: user-service
+    build:
+      context: ./user-service
+      dockerfile: ./Dockerfile
+    ports:
+      - "8087:8087"
+    container_name: user-service
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    depends_on:
+      - postgres-user
+    networks:
+      - spring
+
+  room-service:
+    image: room-service
+    build:
+      context: ./room-service
+      dockerfile: ./Dockerfile
+    ports:
+      - "8086:8086"
+    container_name: room-service
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    depends_on:
+      - postgres-room
+    networks:
+      - spring
+
+  postgres-user:
+    image: postgres
+    ports:
+      - "5432:5432"
+    container_name: postgres-user
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - postgres-user-data:/var/lib/postgresql/data
+      - ./init/user/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - spring
+
+  postgres-room:
+    image: postgres
+    ports:
+      - "5433:5432"
+    container_name: postgres-room
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - postgres-room-data:/var/lib/postgresql/data
+      - ./init/room/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - spring
+
+  mongodb-booking:
+    image: mongo:latest
+    container_name: mongodb-booking
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=password
+    volumes:
+      - mongodb-booking-data:/data/db
+      - ./init/booking/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js
+    networks:
+      - spring
+
+  mongodb-event:
+    image: mongo:latest
+    container_name: mongodb-event
+    ports:
+      - "27018:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=password
+    volumes:
+      - mongodb-event-data:/data/db
+      - ./init/event/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js
+    networks:
+      - spring
+
+  mongodb-approval:
+    image: mongo:latest
+    container_name: mongodb-approval
+    ports:
+      - "27019:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=password
+    volumes:
+      - mongodb-approval-data:/data/db
+      - ./init/approval/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js
+    networks:
+      - spring
+
+volumes:
+  postgres-user-data:
+    driver: local
+  postgres-room-data:
+    driver: local
+  mongodb-booking-data:
+    driver: local
+  mongodb-event-data:
+    driver: local
+  mongodb-approval-data:
+    driver: local
+
+networks:
+  spring:
+    driver: bridge

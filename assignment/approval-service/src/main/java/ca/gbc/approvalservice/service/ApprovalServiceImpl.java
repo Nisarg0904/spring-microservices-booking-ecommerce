@@ -7,6 +7,7 @@ import ca.gbc.approvalservice.dto.EventRequest;
 import ca.gbc.approvalservice.model.Approval;
 import ca.gbc.approvalservice.repository.ApprovalRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -19,12 +20,15 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ApprovalServiceImpl implements ApprovalService {
 
+    @Value("${event.service.url}")
+    private String eventServiceUrl;
+    @Value("${user.service.url}")
+    private String userServiceUrl;
+    @Value("${booking.service.url}")
+    private String bookingServiceUrl;
+
     private final ApprovalRepository approvalRepository;
     private final RestTemplate restTemplate;
-
-    private static final String EVENT_SERVICE_URL = "http://localhost:8089/api/events/{eventId}/status";
-    private static final String USER_SERVICE_URL = "http://localhost:8087/api/users/{userId}/type";
-    private static final String BOOKING_SERVICE_URL = "http://localhost:8088/api/bookings/{bookingId}";
 
     @Override
     public ApprovalResponse approveEvent(ApprovalRequest approvalRequest) {
@@ -94,17 +98,17 @@ public class ApprovalServiceImpl implements ApprovalService {
     }
 
     private String getUserType(String userId) {
-        String url = USER_SERVICE_URL.replace("{userId}", userId);
+        String url = userServiceUrl+"/api/users/"+userId+"/type";
         return restTemplate.getForObject(url, String.class);
     }
 
     private void updateEventStatus(String eventId, String status) {
-        String url = EVENT_SERVICE_URL.replace("{eventId}", eventId);
+        String url = eventServiceUrl+"/api/events/"+eventId+"/status";
         restTemplate.patchForObject(url, new EventRequest(status), Void.class);
     }
 
     private EventResponse getEventById(String eventId) {
-        String url = EVENT_SERVICE_URL.replace("{eventId}/status", eventId);
+        String url = eventServiceUrl+"/api/events/"+eventId;
         ResponseEntity<EventResponse> response = restTemplate.getForEntity(url, EventResponse.class);
         if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
             return response.getBody();
@@ -114,7 +118,7 @@ public class ApprovalServiceImpl implements ApprovalService {
     }
 
     private void deleteBooking(String bookingId) {
-        String url = BOOKING_SERVICE_URL.replace("{bookingId}", bookingId);
+        String url = bookingServiceUrl+"/api/bookings/"+bookingId;
         restTemplate.delete(url);
     }
 }
