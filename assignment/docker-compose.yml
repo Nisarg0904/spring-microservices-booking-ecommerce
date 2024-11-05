@@ -152,6 +152,66 @@ services:
     networks:
       - spring
 
+
+  mongo-express-booking:
+    image: mongo-express
+    ports:
+      - "8081:8081"
+    environment:
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=admin
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=password
+      - ME_CONFIG_MONGODB_SERVER=mongodb-booking
+    depends_on:
+      - mongodb-booking
+    container_name: mongo-express-booking
+    networks:
+      - spring
+
+
+  mongo-express-event:
+    image: mongo-express
+    ports:
+      - "8082:8081"
+    environment:
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=admin
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=password
+      - ME_CONFIG_MONGODB_SERVER=mongodb-event
+    depends_on:
+      - mongodb-event
+    container_name: mongo-express-event
+    networks:
+      - spring
+
+
+  mongo-express-approval:
+    image: mongo-express
+    ports:
+      - "8083:8081"
+    environment:
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=admin
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=password
+      - ME_CONFIG_MONGODB_SERVER=mongodb-approval
+    depends_on:
+      - mongodb-approval
+    container_name: mongo-express-approval
+    networks:
+      - spring
+
+
+
+  pgadmin:
+    image: dpage/pgadmin4
+    ports:
+      - "8888:80"
+    container_name: pgadmin-assignment
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=user@domain.ca
+      - PGADMIN_DEFAULT_PASSWORD=password
+    networks:
+      - spring
+
+
+
 volumes:
   postgres-user-data:
     driver: local
