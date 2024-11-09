@@ -87,6 +87,7 @@ public class ApprovalServiceImpl implements ApprovalService {
                 .collect(Collectors.toList());
     }
 
+
     private ApprovalResponse mapToApprovalResponse(Approval approval) {
         return new ApprovalResponse(
                 approval.getId(),

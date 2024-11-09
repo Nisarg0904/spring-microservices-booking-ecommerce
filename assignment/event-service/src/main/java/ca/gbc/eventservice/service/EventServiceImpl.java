@@ -77,7 +77,7 @@ public class EventServiceImpl implements EventService {
                 .startTime(eventRequest.startTime())
                 .endTime(eventRequest.endTime())
                 .roomId(eventRequest.roomId())
-                .Status("PENDING")
+                .status("PENDING")
                 .bookingId(bookingId)
                 .build();
 
@@ -115,6 +115,16 @@ public class EventServiceImpl implements EventService {
         event.setStatus(status);
         eventRepository.save(event);
     }
+
+    @Override
+    public List<EventResponse> getEventsByStatus(String status) {
+        return eventRepository.findByStatus(status)
+                .stream()
+                .map(this::mapToEventResponse)
+                .collect(Collectors.toList());
+    }
+
+
 
     private void deleteBooking(String bookingId) {
         String url = bookingServiceUrl + "/api/bookings/" + bookingId;
