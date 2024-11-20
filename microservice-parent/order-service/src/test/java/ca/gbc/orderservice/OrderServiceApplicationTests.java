@@ -1,5 +1,7 @@
 package ca.gbc.orderservice;
 
+import ca.gbc.orderservice.client.InventoryClient;
+import ca.gbc.orderservice.stub.InventoryClientStub;
 import io.restassured.RestAssured;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -40,6 +42,7 @@ class OrderServiceApplicationTests {
                     "quantity":5
                 }
                 """;
+     InventoryClientStub.stubInventoryCall("SKU001",5);
 
      RestAssured.given()
              .contentType("application/json")

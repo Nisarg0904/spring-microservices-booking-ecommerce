@@ -24,6 +24,6 @@ COPY --from=builder /home/gradle/src/build/libs/*.jar /app/order-service.jar
 ENV POSTGRES_USER=admin \
     POSTGRES_PASSWORD=password
 
-EXPOSE 8085
+EXPOSE 8091
 # Change here as well !
 ENTRYPOINT ["java","-jar","/app/order-service.jar"]
