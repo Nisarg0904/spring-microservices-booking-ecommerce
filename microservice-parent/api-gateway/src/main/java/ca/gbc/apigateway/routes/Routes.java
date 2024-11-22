@@ -31,7 +31,8 @@ public class Routes {
         log.info("Initializing product-service route with URL: {}", productServiceUrl);
 
         return GatewayRouterFunctions.route()
-                .route(RequestPredicates.path("/api/product"), request -> {
+                // Match both /api/product and /api/product/{productId}
+                .route(RequestPredicates.path("/api/product").or(RequestPredicates.path("/api/product/{productId}")), request -> {
 
                     log.info("Received request for product-service: {}", request.uri());
 
@@ -45,8 +46,9 @@ public class Routes {
                     }
                 })
                 .build();
-
     }
+
+
     @Bean
     public RouterFunction<ServerResponse> orderServiceRoute() {
         log.info("Initializing order-service route with URL: {}", orderServiceUrl);
