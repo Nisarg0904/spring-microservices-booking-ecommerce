@@ -24,6 +24,6 @@ COPY --from=builder /home/gradle/src/build/libs/*.jar /app/product-service.jar
 ENV MONGO_DB_USERNAME=admin \
     MONGO_DB_PASSWORD=password
 
-EXPOSE 8084
+EXPOSE 8082
 # Change here as well !
 ENTRYPOINT ["java","-jar","/app/product-service.jar"]
