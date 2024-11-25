@@ -42,6 +42,10 @@ dependencies {
 
 	implementation("org.apache.httpcomponents.client5:httpclient5:5.2")
 
+	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0")
+	testImplementation("org.springdoc:springdoc-openapi-starter-webmvc-api:2.6.0")
+
+
 
 }
 
