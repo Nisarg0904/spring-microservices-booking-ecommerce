@@ -1,12 +1,16 @@
 package ca.gbc.bookingservice.service;
 
+import ca.gbc.bookingservice.client.RoomClient;
+import ca.gbc.bookingservice.client.UserClient;
 import ca.gbc.bookingservice.dto.BookingRequest;
 import ca.gbc.bookingservice.dto.BookingResponse;
 import ca.gbc.bookingservice.model.Booking;
 import ca.gbc.bookingservice.repository.BookingRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
@@ -15,16 +19,18 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class BookingServiceImpl implements BookingService {
 
-    @Value("${room.service.url}")
-    private String roomServiceUrl;
-    @Value("${user.service.url}")
-    private String userServiceUrl;
 
     private final RestTemplate restTemplate;
+
+    private final RoomClient roomClient ;
+
+    private final UserClient userClient ;
 
     private final BookingRepository bookingRepository;
 
@@ -84,41 +90,40 @@ public class BookingServiceImpl implements BookingService {
 
 
 
-    private boolean isUserValid(String userId) {
-        String url =userServiceUrl+"/api/users/"+userId;
-        try {
-            restTemplate.getForObject(url, Void.class);
-            return true;
-        } catch (RestClientException e) {
-            System.err.println("UserService is unavailable or user does not exist: " + e.getMessage());
-            return false;
-        }
-    }
-
     @Override
     public boolean isRoomAvailable(String roomId, String startTime, String endTime) {
-        String url = roomServiceUrl+"/api/rooms/"+roomId+"/availability";
         try {
-            Boolean isAvailable = restTemplate.getForObject(url, Boolean.class);
+            Boolean isAvailable = roomClient.isRoomAvailable(roomId);
+            log.info("Room Service responded for roomId {}: {}", roomId, isAvailable);
 
             if (Boolean.TRUE.equals(isAvailable)) {
                 LocalDateTime start = LocalDateTime.parse(startTime);
                 LocalDateTime end = LocalDateTime.parse(endTime);
                 List<Booking> conflictingBookings = bookingRepository.findByRoomIdAndStartTimeBetweenOrEndTimeBetween(
                         roomId, start, end, start, end);
-                Booking booking= bookingRepository.findByRoomIdAndStartTimeAndEndTime(roomId, start, end);
-                if(booking!=null) {
+                Booking booking = bookingRepository.findByRoomIdAndStartTimeAndEndTime(roomId, start, end);
+                if (booking != null) {
                     conflictingBookings.add(booking);
                 }
                 return conflictingBookings.isEmpty();
             }
-        } catch (HttpStatusCodeException e) {
-            System.err.println("RoomService returned error: " + e.getStatusCode());
-        } catch (RestClientException e) {
-            System.err.println("RoomService is unavailable: " + e.getMessage());
+        } catch (Exception e) {
+            log.error("Error communicating with Room Service: {}", e.getMessage());
         }
         return false;
     }
+
+
+    public boolean isUserValid(String userId) {
+        try {
+            userClient.getUserById(userId); // If the user exists, no exception will be thrown
+            return true;
+        } catch (Exception e) {
+            log.error("Error validating userId {}: {}", userId, e.getMessage());
+            return false; // User does not exist or an error occurred
+        }
+    }
+
 
 
 }
