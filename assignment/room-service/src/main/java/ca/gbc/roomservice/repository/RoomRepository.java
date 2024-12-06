@@ -9,5 +9,6 @@ import java.util.List;
 @Repository
 public interface RoomRepository extends JpaRepository<Room, String> {
     List<Room> findByAvailability(boolean availability);
+    List<Room> findByAvailabilityAndCapacityGreaterThanEqual(boolean availability,  int capacity);
 
 }

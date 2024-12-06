@@ -19,6 +19,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -58,9 +59,11 @@ public class EventServiceImpl implements EventService {
         }
 
         // Check room capacity
-        if (eventRequest.expectedAttendees() > roomClient.getRoomCapacity(eventRequest.roomId())) {
-            log.error("Event creation failed: Room capacity exceeded.");
-            throw new IllegalArgumentException("Room capacity exceeded.");
+        if(!Objects.equals(eventRequest.roomId(), "")) {
+            if (eventRequest.expectedAttendees() > roomClient.getRoomCapacity(eventRequest.roomId())) {
+                log.error("Event creation failed: Room capacity exceeded.");
+                throw new IllegalArgumentException("Room capacity exceeded.");
+            }
         }
 
         // Make a booking for the event
@@ -72,6 +75,7 @@ public class EventServiceImpl implements EventService {
                     eventRequest.startTime(),
                     eventRequest.endTime(),
                     "Event Booking"
+                    ,eventRequest.expectedAttendees()
             );
             BookingResponse bookingResponse = bookingClient.makeBooking(bookingRequest);
             bookingId = bookingResponse.id();

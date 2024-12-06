@@ -47,15 +47,48 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public BookingResponse createBooking(BookingRequest bookingRequest) {
+        // Validate the user
         if (!isUserValid(bookingRequest.userId())) {
             throw new IllegalStateException("User does not exist");
         }
-        if (!isRoomAvailable(bookingRequest.roomId(), bookingRequest.startTime().toString(), bookingRequest.endTime().toString())) {
-            throw new IllegalStateException("Room is not available for the selected time range");
+
+        // Handle room assignment logic
+        String roomId = bookingRequest.roomId();
+
+        if (roomId == null || roomId.isEmpty()) {
+            if (bookingRequest.capacity() > 0) {
+                log.info("Room ID not provided. Attempting to find a suitable room for capacity: {}", bookingRequest.capacity());
+
+                // Fetch available rooms with sufficient capacity
+                List<String> availableRoomIds = roomClient.getAvailableRoomIds(bookingRequest.capacity());
+                log.info("Available room IDs fetched: {}", availableRoomIds);
+
+                // Check for availability and assign the first suitable room
+                for (String availableRoomId : availableRoomIds) {
+                    if (isRoomAvailable(availableRoomId, bookingRequest.startTime().toString(), bookingRequest.endTime().toString())) {
+                        roomId = availableRoomId;
+                        log.info("Assigned roomId {} to the booking request", roomId);
+                        break;
+                    }
+                }
+
+                if (roomId == null || roomId.isEmpty()) {
+                    throw new IllegalStateException("No suitable room available for the requested capacity and time.");
+                }
+            } else {
+                throw new IllegalArgumentException("Room ID or capacity must be provided for booking.");
+            }
+        } else {
+            // Room ID is provided: Validate its availability
+            if (!isRoomAvailable(roomId, bookingRequest.startTime().toString(), bookingRequest.endTime().toString())) {
+                throw new IllegalStateException("Room is not available for the selected time range.");
+            }
         }
+
+        // Proceed with booking creation
         Booking booking = Booking.builder()
                 .userId(bookingRequest.userId())
-                .roomId(bookingRequest.roomId())
+                .roomId(roomId)
                 .startTime(bookingRequest.startTime())
                 .endTime(bookingRequest.endTime())
                 .purpose(bookingRequest.purpose())
@@ -64,8 +97,8 @@ public class BookingServiceImpl implements BookingService {
         bookingRepository.save(booking);
 
         return mapToBookingResponse(booking);
-
     }
+
 
     @Override
     public List<BookingResponse> getAllBookings() {

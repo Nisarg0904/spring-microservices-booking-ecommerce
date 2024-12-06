@@ -79,6 +79,12 @@ public class RoomController {
         return roomService.getAvailableRooms();
     }
 
+    @GetMapping("/availablecap/{capacity}")
+    @ResponseStatus(HttpStatus.OK)
+    public List<String> getAvailableRoomIdsWithCapacity(@PathVariable("capacity") int capacity) {
+        return roomService.getAvailableRoomIdsWithCapacity(capacity);
+    }
+
     // Check if a specific room is available
     @GetMapping("/availability/{roomId}")
     public ResponseEntity<Boolean> checkRoomAvailability(@PathVariable("roomId") String roomId) {
@@ -104,6 +110,7 @@ public class RoomController {
         Integer roomCapacity = roomService.getRoomCapacity(roomId);
         return ResponseEntity.ok(roomCapacity);
     }
+
 
     // Mark a room as available
     @PatchMapping("/available/{roomId}")

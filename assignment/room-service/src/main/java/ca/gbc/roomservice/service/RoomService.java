@@ -12,6 +12,7 @@ public interface RoomService {
     RoomResponse getRoomById(String id);
     List<RoomResponse> getAllRooms();
     List<RoomResponse> getAvailableRooms();
+    List<String> getAvailableRoomIdsWithCapacity(int capacity);
     boolean checkRoomAvailability(String id);
     RoomResponse markRoomAsUnavailable(String id);
     RoomResponse markRoomAsAvailable(String id);
