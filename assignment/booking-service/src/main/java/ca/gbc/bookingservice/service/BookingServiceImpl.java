@@ -125,13 +125,15 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public boolean isRoomAvailable(String roomId, String startTime, String endTime) {
+
+        log.info("Calling RoomClient to check room availability for roomId: {}", roomId);
         try {
             Boolean isAvailable = roomClient.isRoomAvailable(roomId);
             log.info("Room Service responded for roomId {}: {}", roomId, isAvailable);
 
             if (Boolean.TRUE.equals(isAvailable)) {
-                LocalDateTime start = LocalDateTime.parse(startTime);
-                LocalDateTime end = LocalDateTime.parse(endTime);
+                LocalDateTime start = LocalDateTime.parse(startTime.trim());
+                LocalDateTime end = LocalDateTime.parse(endTime.trim());
                 List<Booking> conflictingBookings = bookingRepository.findByRoomIdAndStartTimeBetweenOrEndTimeBetween(
                         roomId, start, end, start, end);
                 Booking booking = bookingRepository.findByRoomIdAndStartTimeAndEndTime(roomId, start, end);

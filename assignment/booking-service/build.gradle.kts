@@ -38,6 +38,7 @@ dependencies {
 	testImplementation("io.rest-assured:rest-assured")
 	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0")
 	testImplementation("org.springdoc:springdoc-openapi-starter-webmvc-api:2.6.0")
+	//circuit-breaker
 	implementation("org.springframework.cloud:spring-cloud-starter-circuitbreaker-resilience4j:3.1.2")
 
 
