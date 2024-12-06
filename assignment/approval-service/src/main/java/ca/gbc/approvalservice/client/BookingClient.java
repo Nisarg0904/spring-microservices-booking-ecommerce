@@ -1,5 +1,7 @@
 package ca.gbc.approvalservice.client;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -11,6 +13,8 @@ public interface BookingClient {
 
     // Delete a booking by ID
     @DeleteExchange("/api/bookings/{bookingId}")
+    @CircuitBreaker(name = "booking", fallbackMethod = "fallbackDeleteBooking")
+    @Retry(name = "booking")
     void deleteBooking(@PathVariable("bookingId") String bookingId);
 
     // Fallback for delete operation

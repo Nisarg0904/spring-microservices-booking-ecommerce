@@ -68,6 +68,7 @@ public class EventServiceImpl implements EventService {
 
         // Make a booking for the event
         String bookingId;
+        String roomId;
         try {
             BookingRequest bookingRequest = new BookingRequest(
                     eventRequest.organizerId(),
@@ -79,6 +80,8 @@ public class EventServiceImpl implements EventService {
             );
             BookingResponse bookingResponse = bookingClient.makeBooking(bookingRequest);
             bookingId = bookingResponse.id();
+            roomId = bookingResponse.roomId();
+
         } catch (Exception e) {
             log.error("Booking creation failed: {}", e.getMessage());
             throw new IllegalArgumentException("Booking failed: " + e.getMessage());
@@ -92,7 +95,7 @@ public class EventServiceImpl implements EventService {
                 .expectedAttendees(eventRequest.expectedAttendees())
                 .startTime(eventRequest.startTime())
                 .endTime(eventRequest.endTime())
-                .roomId(eventRequest.roomId())
+                .roomId(roomId)
                 .status("PENDING")
                 .bookingId(bookingId)
                 .build();
