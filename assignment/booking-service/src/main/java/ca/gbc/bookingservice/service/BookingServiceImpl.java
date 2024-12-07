@@ -4,11 +4,14 @@ import ca.gbc.bookingservice.client.RoomClient;
 import ca.gbc.bookingservice.client.UserClient;
 import ca.gbc.bookingservice.dto.BookingRequest;
 import ca.gbc.bookingservice.dto.BookingResponse;
+import ca.gbc.bookingservice.dto.UserResponse;
+import ca.gbc.bookingservice.event.BookingPlacedEvent;
 import ca.gbc.bookingservice.model.Booking;
 import ca.gbc.bookingservice.repository.BookingRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpStatusCodeException;
@@ -33,6 +36,8 @@ public class BookingServiceImpl implements BookingService {
 
     private final BookingRepository bookingRepository;
 
+    private final KafkaTemplate<String, BookingPlacedEvent> kafkaTemplate;
+
     private BookingResponse mapToBookingResponse(Booking booking) {
         return new BookingResponse(
                 booking.getId(),
@@ -46,10 +51,13 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public BookingResponse createBooking(BookingRequest bookingRequest) {
-        // Validate the user
-        if (!isUserValid(bookingRequest.userId())) {
+        // Validate the user and retrieve user details
+        UserResponse userResponse = userClient.getUserById(bookingRequest.userId());
+        if (userResponse == null) {
             throw new IllegalStateException("User does not exist");
         }
+
+        String userEmail = userResponse.email();
 
         // Handle room assignment logic
         String roomId = bookingRequest.roomId();
@@ -94,6 +102,16 @@ public class BookingServiceImpl implements BookingService {
                 .build();
 
         bookingRepository.save(booking);
+
+        // Send message to Kafka
+        BookingPlacedEvent bookingPlacedEvent = new BookingPlacedEvent(
+                userEmail,  // Use email retrieved from UserResponse
+                booking.getPurpose()
+        );
+        log.info("Start - Sending BookingPlacedEvent {} to Kafka topic booking-created", bookingPlacedEvent);
+        
+        kafkaTemplate.send("booking-created", bookingPlacedEvent);
+        log.info("Complete - Sent BookingPlacedEvent {} to Kafka topic booking-created", bookingPlacedEvent);
 
         return mapToBookingResponse(booking);
     }
