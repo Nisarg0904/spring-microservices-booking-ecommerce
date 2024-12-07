@@ -26,6 +26,7 @@ out/
 !**/src/main/**/out/
 !**/src/test/**/out/
 
+local-docker-file/local_db/data/
 ### NetBeans ###
 /nbproject/private/
 /nbbuild/
