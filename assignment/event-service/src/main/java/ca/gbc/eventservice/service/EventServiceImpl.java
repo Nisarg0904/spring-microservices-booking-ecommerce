@@ -3,10 +3,8 @@ package ca.gbc.eventservice.service;
 import ca.gbc.eventservice.client.BookingClient;
 import ca.gbc.eventservice.client.RoomClient;
 import ca.gbc.eventservice.client.UserClient;
-import ca.gbc.eventservice.dto.BookingRequest;
-import ca.gbc.eventservice.dto.BookingResponse;
-import ca.gbc.eventservice.dto.EventRequest;
-import ca.gbc.eventservice.dto.EventResponse;
+import ca.gbc.eventservice.dto.*;
+import ca.gbc.eventservice.event.PendingEventPlacedEvent;
 import ca.gbc.eventservice.model.Event;
 import ca.gbc.eventservice.repository.EventRepository;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -31,6 +30,8 @@ public class EventServiceImpl implements EventService {
     private final UserClient userClient;
     private final RoomClient roomClient;
     private final EventRepository eventRepository;
+    private final KafkaTemplate<String, PendingEventPlacedEvent> kafkaTemplate;
+
 
     private EventResponse mapToEventResponse(Event event) {
         return new EventResponse(
@@ -49,14 +50,15 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public EventResponse createEvent(EventRequest eventRequest) {
-        // Fetch organizer type
-        String organizerType = userClient.getUserType(eventRequest.organizerId());
+        UserResponse userResponse = userClient.getUser(eventRequest.organizerId());
+        String organizerType = userResponse.userType(); // Get user type from UserResponse
 
         // Check constraints for students
         if ("student".equalsIgnoreCase(organizerType) && eventRequest.expectedAttendees() > 25) {
             log.error("Event creation failed: Students cannot organize events with more than 25 attendees.");
             throw new IllegalArgumentException("Students cannot organize events with more than 25 attendees.");
         }
+
 
         // Check room capacity
         if(!Objects.equals(eventRequest.roomId(), "")) {
@@ -101,6 +103,13 @@ public class EventServiceImpl implements EventService {
                 .build();
 
         eventRepository.save(event);
+
+        PendingEventPlacedEvent pendingEventPlacedEvent=
+                new PendingEventPlacedEvent(event.getId(),event.getEventName(),event.getOrganizerId(),event.getEventType()
+                , event.getRoomId(), event.getStartTime(),event.getEndTime(),event.getExpectedAttendees(),
+                        event.getStatus(),event.getBookingId(), userResponse.email());
+        kafkaTemplate.send("event-created",pendingEventPlacedEvent);
+
         return mapToEventResponse(event);
     }
 

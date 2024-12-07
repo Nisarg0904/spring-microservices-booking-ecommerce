@@ -6,3 +6,4 @@ public record ApprovalResponse(String id,
                                boolean isApproved,
                                String comments) {
 }
+

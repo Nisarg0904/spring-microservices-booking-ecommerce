@@ -1,5 +1,6 @@
 package ca.gbc.eventservice.client;
 
+import ca.gbc.eventservice.dto.UserResponse;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import org.slf4j.Logger;
@@ -10,13 +11,13 @@ import org.springframework.web.service.annotation.GetExchange;
 public interface UserClient {
     Logger log = LoggerFactory.getLogger(UserClient.class);
 
-    @GetExchange("/api/users/type/{userId}")
-    @CircuitBreaker(name = "user", fallbackMethod = "fallbackGetUserType")
+    @GetExchange("/api/users/{id}")
+    @CircuitBreaker(name = "user", fallbackMethod = "fallbackGetUser")
     @Retry(name = "user")
-    String getUserType(@PathVariable("userId") String userId);
+    UserResponse getUser(@PathVariable("id") String id);
 
-    default String fallbackGetUserType(String userId, Throwable throwable) {
-        log.error("Failed to get user type for userId {}, reason: {}", userId, throwable.getMessage());
-        return "Unknown"; // Default fallback value
+    default UserResponse fallbackGetUser(String id, Throwable throwable) {
+        log.error("Failed to get user for id {}, reason: {}", id, throwable.getMessage());
+        return new UserResponse(id, "Unknown", "unknown@example.com", "Unknown","Unknown");
     }
 }
