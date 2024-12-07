@@ -26,7 +26,6 @@ import java.util.stream.Collectors;
 public class BookingServiceImpl implements BookingService {
 
 
-    private final RestTemplate restTemplate;
 
     private final RoomClient roomClient ;
 
@@ -125,40 +124,26 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public boolean isRoomAvailable(String roomId, String startTime, String endTime) {
-
         log.info("Calling RoomClient to check room availability for roomId: {}", roomId);
-        try {
-            Boolean isAvailable = roomClient.isRoomAvailable(roomId);
-            log.info("Room Service responded for roomId {}: {}", roomId, isAvailable);
+        Boolean isAvailable = roomClient.isRoomAvailable(roomId); // Circuit breaker applies here
+        log.info("Room Service responded for roomId {}: {}", roomId, isAvailable);
 
-            if (Boolean.TRUE.equals(isAvailable)) {
-                LocalDateTime start = LocalDateTime.parse(startTime.trim());
-                LocalDateTime end = LocalDateTime.parse(endTime.trim());
-                List<Booking> conflictingBookings = bookingRepository.findByRoomIdAndStartTimeBetweenOrEndTimeBetween(
-                        roomId, start, end, start, end);
-                Booking booking = bookingRepository.findByRoomIdAndStartTimeAndEndTime(roomId, start, end);
-                if (booking != null) {
-                    conflictingBookings.add(booking);
-                }
-                return conflictingBookings.isEmpty();
+        if (Boolean.TRUE.equals(isAvailable)) {
+            LocalDateTime start = LocalDateTime.parse(startTime.trim());
+            LocalDateTime end = LocalDateTime.parse(endTime.trim());
+            List<Booking> conflictingBookings = bookingRepository.findByRoomIdAndStartTimeBetweenOrEndTimeBetween(
+                    roomId, start, end, start, end);
+            Booking booking = bookingRepository.findByRoomIdAndStartTimeAndEndTime(roomId, start, end);
+            if (booking != null) {
+                conflictingBookings.add(booking);
             }
-        } catch (Exception e) {
-            log.error("Error communicating with Room Service: {}", e.getMessage());
+            return conflictingBookings.isEmpty();
         }
         return false;
     }
 
-
     public boolean isUserValid(String userId) {
-        try {
-            userClient.getUserById(userId); // If the user exists, no exception will be thrown
-            return true;
-        } catch (Exception e) {
-            log.error("Error validating userId {}: {}", userId, e.getMessage());
-            return false; // User does not exist or an error occurred
-        }
+        return userClient.getUserById(userId) != null; // Circuit breaker applies here
     }
-
-
 
 }
