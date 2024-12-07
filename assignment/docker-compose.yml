@@ -1,7 +1,7 @@
 #--------------------------------------
-# 1. docker-compose -p microservice-comp3095-assigment-booking -f docker-compose.yml up -d
+# 1. docker-compose -p microservice-comp3095-assigment-booking -f docker-compose-kafka.yml up -d
 #   - this command will start the container in detached mode (-d) without rebuilding the image (if they exist)
-# 2. docker-compose -p microservice-comp3095-ecommerce -f docker-compose.yml up -d --build
+# 2. docker-compose -p microservice-comp3095-ecommerce -f docker-compose-kafka.yml up -d --build
 #   - this command forces the rebuild of images, even if they already exist, before starting them.
 #--------------------------------------------
 
