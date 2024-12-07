@@ -46,10 +46,6 @@ public class Routes {
                     log.info("Received request for room-service: {}", request.uri());
                     return HandlerFunctions.http(roomServiceUrl).handle(request);
                 })
-                .route(RequestPredicates.path("/api/rooms//availability/{roomId}"), request -> {
-                    log.info("Received request for room-service-availability: {}", request.uri());
-                    return HandlerFunctions.http(roomServiceUrl).handle(request);
-                })
                 .filter(CircuitBreakerFilterFunctions
                         .circuitBreaker("roomServiceCircuitBreaker", URI.create("forward:/fallbackRoute")))
                 .build();
@@ -60,7 +56,7 @@ public class Routes {
         log.info("Initializing user-service route with URL: {}",userServiceUrl);
 
         return GatewayRouterFunctions.route()
-                .route(RequestPredicates.path("/api/users"), request -> {
+                .route(RequestPredicates.path("/api/users/**"), request -> {
                     log.info("Received request for user-service: {}", request.uri());
                     return HandlerFunctions.http(userServiceUrl).handle(request);
                 })
@@ -74,7 +70,7 @@ public class Routes {
         log.info("Initializing booking-service route with URL: {}", bookingServiceUrl);
 
         return GatewayRouterFunctions.route()
-                .route(RequestPredicates.path("/api/bookings"), request -> {
+                .route(RequestPredicates.path("/api/bookings/**"), request -> {
                     log.info("Received request for booking-service: {}", request.uri());
                     return HandlerFunctions.http(bookingServiceUrl).handle(request);
                 })
@@ -88,7 +84,7 @@ public class Routes {
         log.info("Initializing event-service route with URL: {}",eventServiceUrl);
 
         return GatewayRouterFunctions.route()
-                .route(RequestPredicates.path("/api/events"), request -> {
+                .route(RequestPredicates.path("/api/events/**"), request -> {
 
                     log.info("Received request for event-service: {}", request.uri());
                     return HandlerFunctions.http(eventServiceUrl).handle(request);
@@ -103,8 +99,8 @@ public class Routes {
         log.info("Initializing approval-service route with URL: {}",approvalServiceUrl);
 
         return GatewayRouterFunctions.route()
-                .route(RequestPredicates.path("/api/approvals"), request -> {
-                    log.info("Received request for event-service: {}", request.uri());
+                .route(RequestPredicates.path("/api/approvals/**"), request -> {
+                    log.info("Received request for approval-service: {}", request.uri());
                     return HandlerFunctions.http(approvalServiceUrl).handle(request);
                 })
                 .filter(CircuitBreakerFilterFunctions
@@ -177,12 +173,16 @@ public class Routes {
     }
 
     @Bean
-    public RouterFunction<ServerResponse> fallbackRoute(){
+    public RouterFunction<ServerResponse> fallbackRoute() {
         return route("fallbackRoute")
                 .route(RequestPredicates.all(),
-                        request -> ServerResponse.status(HttpStatus.SERVICE_UNAVAILABLE)
-                                .body("Service is Temporarily Unavailable, please try again later")).build();
+                        request -> {
+                            log.error("Fallback triggered for: {}", request.uri());
+                            return ServerResponse.status(HttpStatus.SERVICE_UNAVAILABLE)
+                                    .body("Service is Temporarily Unavailable, please try again later");
+                        }).build();
     }
+
 
 
 }
