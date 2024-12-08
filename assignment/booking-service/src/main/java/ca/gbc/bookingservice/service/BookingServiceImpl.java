@@ -106,7 +106,10 @@ public class BookingServiceImpl implements BookingService {
         // Send message to Kafka
         BookingPlacedEvent bookingPlacedEvent = new BookingPlacedEvent(
                 userEmail,  // Use email retrieved from UserResponse
-                booking.getPurpose()
+                booking.getPurpose(),
+                booking.getRoomId(),
+                booking.getStartTime(),
+                booking.getEndTime()
         );
         log.info("Start - Sending BookingPlacedEvent {} to Kafka topic booking-created", bookingPlacedEvent);
         

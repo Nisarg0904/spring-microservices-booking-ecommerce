@@ -4,19 +4,13 @@ import ca.gbc.eventservice.client.BookingClient;
 import ca.gbc.eventservice.client.RoomClient;
 import ca.gbc.eventservice.client.UserClient;
 import ca.gbc.eventservice.dto.*;
-import ca.gbc.eventservice.event.PendingEventPlacedEvent;
 import ca.gbc.eventservice.model.Event;
 import ca.gbc.eventservice.repository.EventRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -30,7 +24,7 @@ public class EventServiceImpl implements EventService {
     private final UserClient userClient;
     private final RoomClient roomClient;
     private final EventRepository eventRepository;
-    private final KafkaTemplate<String, PendingEventPlacedEvent> kafkaTemplate;
+
 
 
     private EventResponse mapToEventResponse(Event event) {
@@ -104,11 +98,7 @@ public class EventServiceImpl implements EventService {
 
         eventRepository.save(event);
 
-        PendingEventPlacedEvent pendingEventPlacedEvent=
-                new PendingEventPlacedEvent(event.getId(),event.getEventName(),event.getOrganizerId(),event.getEventType()
-                , event.getRoomId(), event.getStartTime(),event.getEndTime(),event.getExpectedAttendees(),
-                        event.getStatus(),event.getBookingId(), userResponse.email());
-        kafkaTemplate.send("event-created",pendingEventPlacedEvent);
+
 
         return mapToEventResponse(event);
     }
