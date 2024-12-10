@@ -39,18 +39,23 @@ class OrderServiceApplicationTests {
 
     @Test
     void createOrderTest() {
-        String requestBody= """
-				{
-					"skuCode": "SKU0001",
-					"price": "100.00",
-					"quantity": 5
-				}
-				""";
+        String requestBody = """
+        {
+            "skuCode": "SKU0001",
+            "price": "100.00",
+            "quantity": 5,
+            "userDetails": {
+                "email": "test@example.com",
+                "firstName": "John",
+                "lastName": "Doe"
+            }
+        }
+        """;
 
-        //Mock a call to inventory-service
+        // Mock a call to inventory-service
         InventoryClientStub.stubInventoryCall("SKU0001", 5);
 
-        var responseBodyString = RestAssured.given()
+        RestAssured.given()
                 .contentType("application/json")
                 .body(requestBody)
                 .when()
@@ -59,7 +64,5 @@ class OrderServiceApplicationTests {
                 .log().all()
                 .statusCode(201)
                 .body(equalTo("Order Placed Successfully!"));
-
-
     }
 }

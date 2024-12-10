@@ -71,6 +71,19 @@ services:
     networks:
       - spring
 
+  notification-service:
+    image: notification-service
+    container_name: notification-service
+    build:
+      context: ./notification-service
+      dockerfile: Dockerfile
+    ports:
+      - "8093:8093"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER-URI: http://keycloak:8080/realms/spring-microservices-security-realm
+    networks:
+      - spring
 
 
   # MongoDB for Product Service
@@ -114,7 +127,7 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_DB: order_service
     volumes:
-      - postgres-order-data:/var/lib/postgresql/data
+      - ./data/order:/var/lib/postgresql/data
       - ./init/order/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - spring
@@ -130,7 +143,7 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_DB: inventory_service
     volumes:
-      - postgres-inventory-data:/var/lib/postgresql/data
+      - ./data/inventory:/var/lib/postgresql/data
       - ./init/inventory/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - spring
@@ -186,6 +199,58 @@ services:
       - POSTGRES_PASSWORD=password
     volumes:
       - ./data/keycloak:/var/lib/postgresql/data
+    networks:
+      - spring
+
+
+
+  zookeeper:
+    container_name: zookeeper
+    hostname: zookeeper
+    image: confluentinc/cp-zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - spring
+
+  broker:
+    container_name: broker
+    image: confluentinc/cp-kafka:7.5.0
+    ports:
+      # External connections (outside docker) use 9092 and host.docker.internal
+      - "9092:9092"
+      # Internal connections (inside docker) and the container host name (broker)
+      - "29092:29092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT, PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker:29092, PLAINTEXT_HOST://host.docker.internal:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    depends_on:
+      - zookeeper
+    healthcheck:
+      test: [ "CMD-SHELL", "kafka-broker-api-versions --bootstrap-server broker:29092 || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - spring
+
+  kafka-ui:
+    container_name: kafka-ui
+    image: provectuslabs/kafka-ui
+    ports:
+      - "8092:8080"
+    environment:
+      KAFKA_CLUSTER_NAME: local
+      KAFKA_CLUSTERS_BOOTSTRAPSERVERS: broker:9092
+      DYNAMIC_CONFIG_ENABLED: 'true'
+    depends_on:
+      - broker
     networks:
       - spring
 
