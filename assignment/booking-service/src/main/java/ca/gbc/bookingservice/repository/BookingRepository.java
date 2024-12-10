@@ -18,4 +18,6 @@ public interface BookingRepository extends MongoRepository<Booking, String> {
     Booking findByRoomIdAndStartTimeAndEndTime(String roomId,
                                                      LocalDateTime newStartTime,
                                                      LocalDateTime newEndTime);
+    List<Booking> findByRoomId(String roomId);
+    List<Booking> findByUserId(String userId);
 }

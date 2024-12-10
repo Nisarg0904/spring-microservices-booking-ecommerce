@@ -63,4 +63,9 @@ public class EventController {
         eventService.updateEventStatus(eventId, eventRequest.Status());
         return ResponseEntity.noContent().build();
     }
+    @GetMapping("/status/{status}")
+    public ResponseEntity<List<EventResponse>> getEventsByStatus(@PathVariable String status) {
+        List<EventResponse> events = eventService.getEventsByStatus(status);
+        return new ResponseEntity<>(events, HttpStatus.OK);
+    }
 }

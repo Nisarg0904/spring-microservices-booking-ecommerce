@@ -4,11 +4,13 @@ import ca.gbc.bookingservice.dto.BookingRequest;
 import ca.gbc.bookingservice.dto.BookingResponse;
 import ca.gbc.bookingservice.service.BookingService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+@Slf4j
 @RestController
 @RequestMapping("/api/bookings")
 @RequiredArgsConstructor
@@ -50,8 +52,10 @@ public class BookingController {
             @RequestParam("roomId") String roomId,
             @RequestParam("startTime") String startTime,
             @RequestParam("endTime") String endTime) {
-
+        log.info("Checking availability for roomId: {}, startTime: {}, endTime: {}", roomId, startTime, endTime);
         boolean isAvailable = bookingService.isRoomAvailable(roomId, startTime, endTime);
+        log.info("Availability result for roomId {}: {}", roomId, isAvailable);
         return ResponseEntity.ok(isAvailable);
+
     }
 }

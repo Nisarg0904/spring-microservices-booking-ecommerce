@@ -25,6 +25,6 @@ public class Event {
     private LocalDateTime startTime;
     private LocalDateTime endTime;
     private int expectedAttendees;
-    private String Status;
+    private String status;
     private String bookingId;
 }

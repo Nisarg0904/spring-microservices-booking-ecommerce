@@ -94,6 +94,16 @@ public class RoomServiceImpl implements RoomService {
         List<Room> availableRooms = roomRepository.findByAvailability(true);
         return availableRooms.stream().map(this::mapToRoomResponse).collect(Collectors.toList());    }
 
+    @Override
+    public List<String> getAvailableRoomIdsWithCapacity(int capacity) {
+        log.info("Fetching available room IDs with capacity >= {}", capacity);
+        List<Room> availableRooms = roomRepository.findByAvailabilityAndCapacityGreaterThanEqual(true, capacity);
+
+        // Extract and return only room IDs
+        return availableRooms.stream()
+                .map(Room::getId)
+                .collect(Collectors.toList());
+    }
 
     @Override
     public boolean checkRoomAvailability(String id) {
@@ -121,6 +131,7 @@ public class RoomServiceImpl implements RoomService {
         log.info("Marking room with ID {} as available", id);
         return changeRoomAvailability(id, true);
     }
+
 
     @Override
     public int getRoomCapacity(String id) {

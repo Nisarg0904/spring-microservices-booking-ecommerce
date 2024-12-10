@@ -1,12 +1,19 @@
 package ca.gbc.bookingservice.service;
 
+import ca.gbc.bookingservice.client.RoomClient;
+import ca.gbc.bookingservice.client.UserClient;
 import ca.gbc.bookingservice.dto.BookingRequest;
 import ca.gbc.bookingservice.dto.BookingResponse;
+import ca.gbc.bookingservice.dto.UserResponse;
+import ca.gbc.bookingservice.event.BookingPlacedEvent;
 import ca.gbc.bookingservice.model.Booking;
 import ca.gbc.bookingservice.repository.BookingRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
@@ -15,18 +22,21 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class BookingServiceImpl implements BookingService {
 
-    @Value("${room.service.url}")
-    private String roomServiceUrl;
-    @Value("${user.service.url}")
-    private String userServiceUrl;
 
-    private final RestTemplate restTemplate;
+
+    private final RoomClient roomClient ;
+
+    private final UserClient userClient ;
 
     private final BookingRepository bookingRepository;
+
+    private final KafkaTemplate<String, BookingPlacedEvent> kafkaTemplate;
 
     private BookingResponse mapToBookingResponse(Booking booking) {
         return new BookingResponse(
@@ -41,15 +51,51 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public BookingResponse createBooking(BookingRequest bookingRequest) {
-        if (!isUserValid(bookingRequest.userId())) {
+        // Validate the user and retrieve user details
+        UserResponse userResponse = userClient.getUserById(bookingRequest.userId());
+        if (userResponse == null) {
             throw new IllegalStateException("User does not exist");
         }
-        if (!isRoomAvailable(bookingRequest.roomId(), bookingRequest.startTime().toString(), bookingRequest.endTime().toString())) {
-            throw new IllegalStateException("Room is not available for the selected time range");
+
+        String userEmail = userResponse.email();
+
+        // Handle room assignment logic
+        String roomId = bookingRequest.roomId();
+
+        if (roomId == null || roomId.isEmpty()) {
+            if (bookingRequest.capacity() > 0) {
+                log.info("Room ID not provided. Attempting to find a suitable room for capacity: {}", bookingRequest.capacity());
+
+                // Fetch available rooms with sufficient capacity
+                List<String> availableRoomIds = roomClient.getAvailableRoomIds(bookingRequest.capacity());
+                log.info("Available room IDs fetched: {}", availableRoomIds);
+
+                // Check for availability and assign the first suitable room
+                for (String availableRoomId : availableRoomIds) {
+                    if (isRoomAvailable(availableRoomId, bookingRequest.startTime().toString(), bookingRequest.endTime().toString())) {
+                        roomId = availableRoomId;
+                        log.info("Assigned roomId {} to the booking request", roomId);
+                        break;
+                    }
+                }
+
+                if (roomId == null || roomId.isEmpty()) {
+                    throw new IllegalStateException("No suitable room available for the requested capacity and time.");
+                }
+            } else {
+                throw new IllegalArgumentException("Room ID or capacity must be provided for booking.");
+            }
+        } else {
+            // Room ID is provided: Validate its availability
+            if (!isRoomAvailable(roomId, bookingRequest.startTime().toString(), bookingRequest.endTime().toString())) {
+                throw new IllegalStateException("Room is not available for the selected time range.");
+            }
         }
+
+        // Proceed with booking creation
         Booking booking = Booking.builder()
                 .userId(bookingRequest.userId())
-                .roomId(bookingRequest.roomId())
+                .roomId(roomId)
                 .startTime(bookingRequest.startTime())
                 .endTime(bookingRequest.endTime())
                 .purpose(bookingRequest.purpose())
@@ -57,9 +103,22 @@ public class BookingServiceImpl implements BookingService {
 
         bookingRepository.save(booking);
 
-        return mapToBookingResponse(booking);
+        // Send message to Kafka
+        BookingPlacedEvent bookingPlacedEvent = new BookingPlacedEvent(
+                userEmail,  // Use email retrieved from UserResponse
+                booking.getPurpose(),
+                booking.getRoomId(),
+                booking.getStartTime(),
+                booking.getEndTime()
+        );
+        log.info("Start - Sending BookingPlacedEvent {} to Kafka topic booking-created", bookingPlacedEvent);
+        
+        kafkaTemplate.send("booking-created", bookingPlacedEvent);
+        log.info("Complete - Sent BookingPlacedEvent {} to Kafka topic booking-created", bookingPlacedEvent);
 
+        return mapToBookingResponse(booking);
     }
+
 
     @Override
     public List<BookingResponse> getAllBookings() {
@@ -84,41 +143,28 @@ public class BookingServiceImpl implements BookingService {
 
 
 
-    private boolean isUserValid(String userId) {
-        String url =userServiceUrl+"/api/users/"+userId;
-        try {
-            restTemplate.getForObject(url, Void.class);
-            return true;
-        } catch (RestClientException e) {
-            System.err.println("UserService is unavailable or user does not exist: " + e.getMessage());
-            return false;
-        }
-    }
-
     @Override
     public boolean isRoomAvailable(String roomId, String startTime, String endTime) {
-        String url = roomServiceUrl+"/api/rooms/"+roomId+"/availability";
-        try {
-            Boolean isAvailable = restTemplate.getForObject(url, Boolean.class);
+        log.info("Calling RoomClient to check room availability for roomId: {}", roomId);
+        Boolean isAvailable = roomClient.isRoomAvailable(roomId); // Circuit breaker applies here
+        log.info("Room Service responded for roomId {}: {}", roomId, isAvailable);
 
-            if (Boolean.TRUE.equals(isAvailable)) {
-                LocalDateTime start = LocalDateTime.parse(startTime);
-                LocalDateTime end = LocalDateTime.parse(endTime);
-                List<Booking> conflictingBookings = bookingRepository.findByRoomIdAndStartTimeBetweenOrEndTimeBetween(
-                        roomId, start, end, start, end);
-                Booking booking= bookingRepository.findByRoomIdAndStartTimeAndEndTime(roomId, start, end);
-                if(booking!=null) {
-                    conflictingBookings.add(booking);
-                }
-                return conflictingBookings.isEmpty();
+        if (Boolean.TRUE.equals(isAvailable)) {
+            LocalDateTime start = LocalDateTime.parse(startTime.trim());
+            LocalDateTime end = LocalDateTime.parse(endTime.trim());
+            List<Booking> conflictingBookings = bookingRepository.findByRoomIdAndStartTimeBetweenOrEndTimeBetween(
+                    roomId, start, end, start, end);
+            Booking booking = bookingRepository.findByRoomIdAndStartTimeAndEndTime(roomId, start, end);
+            if (booking != null) {
+                conflictingBookings.add(booking);
             }
-        } catch (HttpStatusCodeException e) {
-            System.err.println("RoomService returned error: " + e.getStatusCode());
-        } catch (RestClientException e) {
-            System.err.println("RoomService is unavailable: " + e.getMessage());
+            return conflictingBookings.isEmpty();
         }
         return false;
     }
 
+    public boolean isUserValid(String userId) {
+        return userClient.getUserById(userId) != null; // Circuit breaker applies here
+    }
 
 }

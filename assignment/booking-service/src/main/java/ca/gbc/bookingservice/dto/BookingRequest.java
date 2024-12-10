@@ -7,5 +7,6 @@ public record BookingRequest( String id,
          String roomId,
          LocalDateTime startTime,
          LocalDateTime endTime,
-         String purpose) {
+         String purpose,
+                              int capacity) {
 }

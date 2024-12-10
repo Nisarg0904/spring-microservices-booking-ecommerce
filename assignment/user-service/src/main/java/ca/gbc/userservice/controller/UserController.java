@@ -66,12 +66,12 @@ public class    UserController {
         return ResponseEntity.ok(users);
     }
 
-    @GetMapping("/type/{userType}")
+    @GetMapping("/{userType}/type")
     public ResponseEntity<List<UserResponse>> getUsersByUserType(@PathVariable String userType) {
         List<UserResponse> users = userService.getUsersByUserType(userType);
         return ResponseEntity.ok(users);
     }
-    @GetMapping("/{Id}/type")
+    @GetMapping("/type/{Id}")
     public ResponseEntity<String> getUserType(@PathVariable("Id") Long userId) {
         String userType = userService.getUserTypeById(userId);
         return ResponseEntity.ok(userType);

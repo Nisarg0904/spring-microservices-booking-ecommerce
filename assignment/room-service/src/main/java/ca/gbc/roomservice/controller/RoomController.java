@@ -79,15 +79,21 @@ public class RoomController {
         return roomService.getAvailableRooms();
     }
 
+    @GetMapping("/availablecap/{capacity}")
+    @ResponseStatus(HttpStatus.OK)
+    public List<String> getAvailableRoomIdsWithCapacity(@PathVariable("capacity") int capacity) {
+        return roomService.getAvailableRoomIdsWithCapacity(capacity);
+    }
+
     // Check if a specific room is available
-    @GetMapping("/{roomId}/availability")
+    @GetMapping("/availability/{roomId}")
     public ResponseEntity<Boolean> checkRoomAvailability(@PathVariable("roomId") String roomId) {
         boolean isAvailable = roomService.checkRoomAvailability(roomId);
         return ResponseEntity.ok(isAvailable);
     }
 
     // Mark a room as unavailable
-    @PatchMapping("/{roomId}/unavailable")
+    @PatchMapping("/unavailable/{roomId}")
     public ResponseEntity<?> markRoomAsUnavailable(@PathVariable("roomId") String roomId) {
         RoomResponse updatedRoom = roomService.markRoomAsUnavailable(roomId);
         if (updatedRoom != null) {
@@ -99,14 +105,15 @@ public class RoomController {
         }
     }
 
-    @GetMapping("/{roomId}/capacity")
+    @GetMapping("/capacity/{roomId}")
     public ResponseEntity<Integer> getRoomCapacity(@PathVariable("roomId") String roomId) {
         Integer roomCapacity = roomService.getRoomCapacity(roomId);
         return ResponseEntity.ok(roomCapacity);
     }
 
+
     // Mark a room as available
-    @PatchMapping("/{roomId}/available")
+    @PatchMapping("/available/{roomId}")
     public ResponseEntity<?> markRoomAsAvailable(@PathVariable("roomId") String roomId) {
         RoomResponse updatedRoom = roomService.markRoomAsAvailable(roomId);
         if (updatedRoom != null) {

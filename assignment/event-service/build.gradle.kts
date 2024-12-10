@@ -23,6 +23,12 @@ repositories {
 	mavenCentral()
 }
 
+dependencyManagement {
+	imports {
+		mavenBom("org.springframework.cloud:spring-cloud-dependencies:2023.0.3") // Ensure compatibility
+	}
+}
+
 dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-actuator")
 	implementation("org.springframework.boot:spring-boot-starter-data-mongodb")
@@ -37,8 +43,18 @@ dependencies {
 	testImplementation("org.testcontainers:junit-jupiter")
 	testImplementation("org.testcontainers:mongodb")
 	testImplementation("io.rest-assured:rest-assured")
+	implementation("org.springframework.cloud:spring-cloud-starter-contract-stub-runner")
 
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0")
+	testImplementation("org.springdoc:springdoc-openapi-starter-webmvc-api:2.6.0")
+	testImplementation("com.github.tomakehurst:wiremock-jre8:2.35.0")
+	implementation("org.springframework.cloud:spring-cloud-starter-circuitbreaker-resilience4j:3.1.2")
+	implementation("org.springframework.kafka:spring-kafka:3.3.0")
+	testImplementation("org.springframework.kafka:spring-kafka-test:3.3.0")
+	testImplementation("org.testcontainers:kafka:1.20.4")
+
+
 }
 
 tasks.withType<Test> {

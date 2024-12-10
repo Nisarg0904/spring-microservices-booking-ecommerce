@@ -1,0 +1,220 @@
+
+version: '3.9'
+services:
+
+
+  postgres-user:
+    image: postgres
+    ports:
+      - "5432:5432"
+    container_name: postgres-user
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - ./data/user:/var/lib/postgresql/data
+      - ./init/user/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  postgres-room:
+    image: postgres
+    ports:
+      - "5433:5432"
+    container_name: postgres-room
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - ./data/room:/var/lib/postgresql/data
+      - ./init/room/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+
+  pgadmin:
+    image: dpage/pgadmin4
+    ports:
+      - "8888:80"
+    container_name: pgadmin-assignment
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=user@domain.ca
+      - PGADMIN_DEFAULT_PASSWORD=password
+
+
+
+  mongodb-booking:
+    image: mongo:latest # put the version which you want to use
+    container_name: mongodb-booking
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=password
+    volumes:
+      - ./init/booking/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js
+      - ./data/booking:/data/db
+
+
+
+  mongodb-event:
+    image: mongo:latest # put the version which you want to use
+    container_name: mongodb-event
+    ports:
+      - "27018:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=password
+    volumes:
+      - ./init/event/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js
+      - ./data/event:/data/db
+
+
+
+  mongodb-approval:
+    image: mongo:latest # put the version which you want to use
+    container_name: mongodb-approval
+    ports:
+      - "27019:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=password
+    volumes:
+      - ./init/approval/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js
+      - ./data/approval:/data/db
+
+
+  mongo-express-booking:
+    image: mongo-express
+    ports:
+      - "8081:8081"
+    environment:
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=admin
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=password
+      - ME_CONFIG_MONGODB_SERVER=mongodb-booking
+    depends_on:
+      - mongodb-booking
+    container_name: mongo-express-booking
+
+  mongo-express-event:
+    image: mongo-express
+    ports:
+      - "8082:8081"
+    environment:
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=admin
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=password
+      - ME_CONFIG_MONGODB_SERVER=mongodb-event
+    depends_on:
+      - mongodb-event
+    container_name: mongo-express-event
+
+  mongo-express-approval:
+    image: mongo-express
+    ports:
+      - "8083:8081"
+    environment:
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=admin
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=password
+      - ME_CONFIG_MONGODB_SERVER=mongodb-approval
+    depends_on:
+      - mongodb-approval
+    container_name: mongo-express-approval
+
+
+
+  # Keycloak
+  keycloak:
+    container_name: keycloak
+    hostname: keycloak
+    image: quay.io/keycloak/keycloak:24.0.1
+    command: [ "start-dev", "--import-realm" ]
+    environment:
+      DB_VENDOR: postgres
+      DB_ADDR: postgres-keycloak
+      DB_DATABASE: keycloak
+      DB_USER: admin
+      DB_PASSWORD: password
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: password
+      ROOT_LOGLEVEL: DEBUG
+      JBOSS_LOG_MANAGER_ROOT_LOGGER: DEBUG, stdout, FILE
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./realms/:/opt/keycloak/data/import
+    depends_on:
+      - postgres-keycloak
+    networks:
+      - spring
+
+  # postgres for keycloak
+  postgres-keycloak:
+    image: postgres
+    ports:
+      - "5429:5432"
+    container_name: postgres-keycloak
+    environment:
+      - POSTGRES_DB=keycloak
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - ./data/keycloak:/var/lib/postgresql/data
+    networks:
+      - spring
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - spring
+
+  broker:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: broker
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT, PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    depends_on:
+      zookeeper:
+        condition: service_started
+    healthcheck:
+      test: [ "CMD-SHELL", "kafka-broker-api-versions --bootstrap-server broker:29092 || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - spring
+
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    ports:
+      - "8076:8080"
+    environment:
+      KAFKA_CLUSTERS_NAME: local
+      KAFKA_CLUSTERS_BOOTSTRAPSERVERS: broker:29092
+      DYNAMIC_CONFIG_ENABLED: 'true'
+    depends_on:
+      broker:
+        condition: service_healthy
+    networks:
+      - spring
+
+
+
+
+volumes:
+  mongodb:
+    driver: local
+
+networks:
+  spring:
+    driver: bridge
